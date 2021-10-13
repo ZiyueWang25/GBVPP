@@ -31,7 +31,7 @@ def get_test_avg(train_df, test_df, config):
     _, _, _, X_test, y_test, w_test = prepare_train_valid(train_df, test_df, config)
     data_retriever = VPP(X_test, y_test, w_test)
     data_loader = DataLoader(data_retriever,
-                             batch_size=config.batch_size * 2,
+                             batch_size=config.batch_size,
                              shuffle=False,
                              num_workers=config.num_workers, pin_memory=True, drop_last=False)
 

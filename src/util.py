@@ -83,5 +83,4 @@ def get_device():
     return device
 
 
-def get_score(y_true, y_pred, weight):
-    return ((y_true- y_pred) * weight).sum() / weight.sum()
+

@@ -25,12 +25,13 @@ class BaseConfig:
     hidden = [512, 256, 128, 64]
     bidirectional = True
     nh = 256
-    do_prob = 0.2
+    do_prob = 0.1
 
     # training
-    epochs = 3
+    epochs = 20
+    es = 10
     train_folds = [0]
-    batch_size = 256
+    batch_size = 1024
     lr = 1e-3
     weight_decay = 1e-4
     warmup = 0.1

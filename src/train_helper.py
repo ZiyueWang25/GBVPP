@@ -9,7 +9,8 @@ import wandb
 from util import *
 from dataset import *
 from models import Model
-import loss
+from loss import cal_mae_loss
+from metric import  cal_mae_metric
 
 
 def training_loop(train_df, config):
@@ -51,7 +52,7 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
                               shuffle=True,
                               num_workers=config.num_workers, pin_memory=True, drop_last=False)
     valid_loader = DataLoader(valid_dt,
-                              batch_size=config.batch_size * 2,
+                              batch_size=config.batch_size,
                               shuffle=False,
                               num_workers=config.num_workers, pin_memory=True, drop_last=False)
 
@@ -70,9 +71,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
         model.load_state_dict(checkpoint['model_state_dict'])
         best_valid_score = float(checkpoint['best_valid_score'])
 
-    criterion = loss.loss_fnc
-    trainer = Trainer(model, optimizer, criterion, scheduler,
-                      y_valid.flatten(), w_valid.flatten(),
+    trainer = Trainer(model, optimizer, cal_mae_loss, scheduler,
+                      y_valid, w_valid,
                       best_valid_score, fold, config,
                       swa_model=swa_model, swa_scheduler=swa_scheduler,
                       swa_start_step=swa_start_step, swa_start_epoch=swa_start_epoch)
@@ -101,6 +101,7 @@ class Trainer:
         self.y_valid = y_valid
         self.w_valid = w_valid
         self.fold = fold
+        self.max_grad_norm = 100
 
         # swa
         self.swa_model = swa_model
@@ -112,10 +113,12 @@ class Trainer:
         # log
         self.print_num_steps = config.print_num_steps
         self.use_wandb = config.use_wandb
+        self.es = config.es
 
     def fit(self, epochs, train_loader, valid_loader, save_path):
         train_losses = []
         valid_losses = []
+        es_cnt = 0
         for n_epoch in range(epochs):
             start_time = time.time()
             print('Epoch: ', n_epoch)
@@ -132,16 +135,19 @@ class Trainer:
 
             if isinstance(self.scheduler, ReduceLROnPlateau):
                 self.scheduler.step(valid_loss)
-            valid_score = get_score(self.y_valid, valid_preds, self.w_valid)
+            valid_score = cal_mae_metric(self.y_valid, valid_preds, self.w_valid)
 
             if self.best_valid_score > valid_score:
                 self.best_valid_score = valid_score
                 self.save_model(n_epoch, save_path + f'best_model.pth', valid_preds)
+                es_cnt = 0
+            else:
+                es_cnt += 1
 
-            print('train_loss: ', train_loss)
-            print('valid_loss: ', valid_loss)
-            print('valid_score: ', valid_score)
-            print('best_valid_score: ', self.best_valid_score)
+
+            print('loss:  {:.4f}, val_loss {:.4f}, '
+                  '\val_score {:.4f}, best_val_score {:.4f}'.format(train_loss, valid_loss, valid_score,
+                                                                    self.best_valid_score))
             print('time used: ', time.time() - start_time)
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
@@ -149,10 +155,14 @@ class Trainer:
                            f"[fold{self.fold}] avg_val_loss": valid_loss,
                            f"[fold{self.fold}] val_score": valid_score})
                 # save swa
+            if es_cnt >= self.es:
+                print("Early Stop")
+                break
+
         if self.swa_model is not None:
             update_bn(train_loader, self.swa_model, device=self.device)
             valid_loss_swa, valid_preds_swa = self.valid_epoch(valid_loader, self.swa_model)
-            valid_score_swa = get_score(self.y_valid, valid_preds_swa, self.w_valid)
+            valid_score_swa = cal_mae_metric(self.y_valid, valid_preds_swa, self.w_valid)
             print("SWA: Valid Loss {:.5f}, Valid Score {:.5f}".format(valid_loss_swa, valid_score_swa))
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] avg_val_loss_swa": valid_loss_swa,
@@ -182,6 +192,7 @@ class Trainer:
                 outputs = self.model(X).squeeze()
                 loss = self.criterion(outputs, targets, weights)
             scaler.scale(loss).backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
             scaler.update()
 
@@ -201,7 +212,7 @@ class Trainer:
                       f'avg loss: ', train_loss / step,
                       f'inst loss: ', loss2.item())
 
-        return train_loss / step
+        return train_loss.numpy() / step
 
     def valid_epoch(self, valid_loader, model):
         model.eval()
@@ -216,7 +227,7 @@ class Trainer:
                 loss = self.criterion(outputs, targets, weights)
                 valid_loss.append(loss.detach().item())
                 preds.append(outputs.to('cpu').numpy())
-        predictions = np.concatenate(preds).flatten()
+        predictions = np.concatenate(preds, axis=0)
         return np.mean(valid_loss), predictions
 
     def save_model(self, n_epoch, save_path, valid_preds):
