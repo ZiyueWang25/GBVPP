@@ -19,7 +19,7 @@ class BaseConfig:
     # preprocessing
     low_q = 0.05
     high_q = 0.95
-    unit_var = False
+    unit_var = True
 
     # LSTM
     hidden = [512, 256, 128, 64]
@@ -51,6 +51,7 @@ class BaseConfig:
     num_workers = 2
     use_dp = True
 
+
 def updateConfig(config):
     config.model_output_folder = config.output_folder + config.model_version + "/"
     if config.ckpt_folder:
@@ -65,9 +66,7 @@ def updateConfig(config):
     return config
 
 
-config_list = {"base": BaseConfig}
-
-
 def read_config(name="base"):
+    config_list = {"base": BaseConfig}
     assert name in config_list, "name is not in config_list.keys()" + list(config_list.keys())
     return config_list[name]

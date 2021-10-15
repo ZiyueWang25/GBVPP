@@ -5,6 +5,8 @@ import numpy as np
 from sklearn.preprocessing import RobustScaler
 
 from FE import add_features
+from pickle import dump
+from pickle import load
 
 
 class VPP(torch.utils.data.Dataset):
@@ -43,7 +45,7 @@ def read_data(config):
     return train, test
 
 
-def prepare_train_valid(train, valid, config):
+def prepare_train_valid(train, valid, config, fold):
     print("Prepare train valid")
     print(train.shape, valid.shape)
     train = add_features(train)
@@ -51,6 +53,10 @@ def prepare_train_valid(train, valid, config):
     feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
     rs = RobustScaler(quantile_range=(config.low_q, config.high_q), unit_variance=config.unit_var)
     X_train = rs.fit_transform(train[feature_cols])
+
+    # save scaler
+    dump(rs, open(config.model_output_folder + f'/scaler_{fold}.pkl', 'wb'))
+
     X_valid = rs.transform(valid[feature_cols])
     print(X_train.shape)
     X_train = X_train.reshape(-1, 80, len(feature_cols))
@@ -61,6 +67,16 @@ def prepare_train_valid(train, valid, config):
     w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
+
+def prepare_test(test, config, fold):
+    test = add_features(test)
+    feature_cols = [col for col in test.columns if col not in ["id", "breath_id", "fold", "pressure"]]
+    rs = load(open(config.model_output_folder + f'/scaler_{fold}.pkl', 'rb'))
+    X_test = rs.transform(test[feature_cols])
+    X_test = X_test.reshape(-1, 80, len(feature_cols))
+    y_test = test['pressure'].values.reshape(-1, 80)
+    w_test = 1 - test['u_out'].values.reshape(-1, 80)
+    return X_test, y_test, w_test
 
 
 def generate_PL(fold, train_df, config):

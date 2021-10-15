@@ -1,6 +1,6 @@
 import time
 from torch import nn
-from torch.optim import AdamW
+from torch.optim import AdamW, Adam
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
 from torch.optim.swa_utils import update_bn
@@ -10,7 +10,7 @@ from util import *
 from dataset import *
 from models import Model
 from loss import cal_mae_loss
-from metric import  cal_mae_metric
+from metric import cal_mae_metric
 
 
 def training_loop(train_df, config):
@@ -41,9 +41,9 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
 
     train, valid = train_df.loc[train_index], train_df.loc[valid_index]
 
-    X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train, valid, config)
+    X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train, valid, config, fold)
 
-    print('training data samples, val data samples: ', len(X_train), len(X_valid))
+    print('training data samples, val data samples: ', X_train.shape, X_valid.shape)
     train_dt = VPP(X_train, y_train, w_train)
     valid_dt = VPP(X_valid, y_valid, w_valid)
 
@@ -61,7 +61,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     model.to(config.device)
     if config.use_dp and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
-    optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
+    #optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
+    optimizer = Adam(model.parameters(), lr=config.lr)
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
     best_valid_score = np.inf
@@ -144,10 +145,9 @@ class Trainer:
             else:
                 es_cnt += 1
 
-
-            print('loss:  {:.4f}, val_loss {:.4f}, '
-                  '\val_score {:.4f}, best_val_score {:.4f}'.format(train_loss, valid_loss, valid_score,
-                                                                    self.best_valid_score))
+            print('loss:  {:.4f}, val_loss {:.4f}, '\
+                  'val_score {:.4f}, best_val_score {:.4f}'.format(train_loss, valid_loss, valid_score,
+                                                                   self.best_valid_score))
             print('time used: ', time.time() - start_time)
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
@@ -212,7 +212,7 @@ class Trainer:
                       f'avg loss: ', train_loss / step,
                       f'inst loss: ', loss2.item())
 
-        return train_loss.numpy() / step
+        return train_loss.cpu().detach().numpy() / step
 
     def valid_epoch(self, valid_loader, model):
         model.eval()
@@ -226,7 +226,7 @@ class Trainer:
                 outputs = model(X).squeeze()
                 loss = self.criterion(outputs, targets, weights)
                 valid_loss.append(loss.detach().item())
-                preds.append(outputs.to('cpu').numpy())
+                preds.append(outputs.to('cpu').detach().numpy())
         predictions = np.concatenate(preds, axis=0)
         return np.mean(valid_loss), predictions
 

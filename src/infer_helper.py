@@ -25,17 +25,17 @@ def removeDPModule(state_dict):
     return {key.replace("module.", ""): value for key, value in state_dict.items()}
 
 
-def get_test_avg(train_df, test_df, config):
+def get_test_avg(test_df, config):
     test_df['pressure'] = 0
     test_avg = test_df[['id', 'pressure']].copy()
-    _, _, _, X_test, y_test, w_test = prepare_train_valid(train_df, test_df, config)
-    data_retriever = VPP(X_test, y_test, w_test)
-    data_loader = DataLoader(data_retriever,
-                             batch_size=config.batch_size,
-                             shuffle=False,
-                             num_workers=config.num_workers, pin_memory=True, drop_last=False)
-
     for fold in tqdm(config.train_folds):
+        X_test, y_test, w_test = prepare_train_valid(test_df, config, fold)
+        data_retriever = VPP(X_test, y_test, w_test)
+        data_loader = DataLoader(data_retriever,
+                                 batch_size=config.batch_size,
+                                 shuffle=False,
+                                 num_workers=config.num_workers, pin_memory=True, drop_last=False)
+
         model = models.Model(X_test.shape[-1], config)
         if config.use_swa:
             swa_model = AveragedModel(model)
