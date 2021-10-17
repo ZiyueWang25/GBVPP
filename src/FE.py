@@ -47,10 +47,11 @@ def add_features(df):
     df["RC_u_in_mean_diff"] = df["u_in"] - df["RC_u_in_mean"]
     df.drop(columns=["RC_u_in_median", "RC_u_in_mean"], inplace=True)
 
+    df.sort_values("id", inplace=True)
+
     # R C
     df['R'] = df['R'].astype(str)
     df['C'] = df['C'].astype(str)
-    df['R_C'] = df["R"] + '_' + df["C"]
     df = pd.get_dummies(df)
 
 

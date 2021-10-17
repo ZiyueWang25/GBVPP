@@ -29,7 +29,7 @@ def get_test_avg(test_df, config):
     test_df['pressure'] = 0
     test_avg = test_df[['id', 'pressure']].copy()
     for fold in tqdm(config.train_folds):
-        X_test, y_test, w_test = prepare_train_valid(test_df, config, fold)
+        X_test, y_test, w_test = prepare_test(test_df, config, fold)
         data_retriever = VPP(X_test, y_test, w_test)
         data_loader = DataLoader(data_retriever,
                                  batch_size=config.batch_size,

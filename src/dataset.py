@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.preprocessing import RobustScaler
 
 from FE import add_features
-from pickle import dump
-from pickle import load
+
+from pickle import dump, load
 
 
 class VPP(torch.utils.data.Dataset):
@@ -20,6 +20,22 @@ class VPP(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.X)
+
+    def __getitem__(self, i):
+        return self.X[i], self.y[i], self.w[i]
+
+
+class LR_VPP(torch.utils.data.Dataset):
+    def __init__(self, X, y, w, batch_size):
+        if y is None:
+            y = np.zeros(len(X), dtype=np.float32)
+        self.bath_size = batch_size
+        self.X = X.astype(np.float32)
+        self.y = y.astype(np.float32)
+        self.w = w.astype(np.float32)
+
+    def __len__(self):
+        return self.X.shape[0]
 
     def __getitem__(self, i):
         return self.X[i], self.y[i], self.w[i]
@@ -45,20 +61,27 @@ def read_data(config):
     return train, test
 
 
-def prepare_train_valid(train, valid, config, fold):
-    print("Prepare train valid")
-    print(train.shape, valid.shape)
-    train = add_features(train)
-    valid = add_features(valid)
-    feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
+def prepare_train_valid(train_df, config, fold):
+    train_index, valid_index = train_df.query(f"fold!={fold}").index, train_df.query(f"fold=={fold}").index
     rs = RobustScaler(quantile_range=(config.low_q, config.high_q), unit_variance=config.unit_var)
-    X_train = rs.fit_transform(train[feature_cols])
+    train, valid = train_df.loc[train_index], train_df.loc[valid_index]
+    if config.strict_scale:
+        print("Use scale to fit train and scale valid")
+        print("Prepare train valid")
+        print(train.shape, valid.shape)
+        feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
 
-    # save scaler
-    dump(rs, open(config.model_output_folder + f'/scaler_{fold}.pkl', 'wb'))
+        X_train = rs.fit_transform(train[feature_cols])
+        X_valid = rs.transform(valid[feature_cols])
 
-    X_valid = rs.transform(valid[feature_cols])
-    print(X_train.shape)
+        dump(rs, open(config.model_output_folder + f'/scaler_{fold}.pkl', 'wb'))
+    else:
+        feature_cols = [col for col in train_df.columns if col not in ["id", "breath_id", "fold", "pressure"]]
+        X_all = rs.fit_transform(train_df[feature_cols])
+        X_train, X_valid = X_all[train_index, :], X_all[valid_index, :]
+
+        dump(rs, open(config.model_output_folder + f'/scaler.pkl', 'wb'))
+
     X_train = X_train.reshape(-1, 80, len(feature_cols))
     y_train = train['pressure'].values.reshape(-1, 80)
     w_train = 1 - train['u_out'].values.reshape(-1, 80)
@@ -68,10 +91,15 @@ def prepare_train_valid(train, valid, config, fold):
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
 
+
 def prepare_test(test, config, fold):
-    test = add_features(test)
+    # test data should already have features
     feature_cols = [col for col in test.columns if col not in ["id", "breath_id", "fold", "pressure"]]
-    rs = load(open(config.model_output_folder + f'/scaler_{fold}.pkl', 'rb'))
+    if config.strict_scale:
+        rs = load(open(config.model_output_folder + f'/scaler_{fold}.pkl', 'rb'))
+    else:
+        rs = load(open(config.model_output_folder + f'/scaler.pkl', 'rb'))
+
     X_test = rs.transform(test[feature_cols])
     X_test = X_test.reshape(-1, 80, len(feature_cols))
     y_test = test['pressure'].values.reshape(-1, 80)

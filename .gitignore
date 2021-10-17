@@ -1,3 +1,5 @@
+wandb/
+pic/
 input/
 output/
 *.zip

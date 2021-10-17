@@ -11,9 +11,11 @@ from dataset import *
 from models import Model
 from loss import cal_mae_loss
 from metric import cal_mae_metric
+from FE import add_features
 
 
 def training_loop(train_df, config):
+    # train_df should already have features added
     if config.use_wandb:
         wandb.login(key=get_key(config.wandb_key_path))
         wandb.init(project=config.wandb_project, name=config.model_version + config.wandb_post,
@@ -37,11 +39,7 @@ def training_loop(train_df, config):
 
 def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epoch=None, **kwargs):
     train_df = generate_PL(fold, original_train_df.copy(), config)
-    train_index, valid_index = train_df.query(f"fold!={fold}").index, train_df.query(f"fold=={fold}").index
-
-    train, valid = train_df.loc[train_index], train_df.loc[valid_index]
-
-    X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train, valid, config, fold)
+    X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
     print('training data samples, val data samples: ', X_train.shape, X_valid.shape)
     train_dt = VPP(X_train, y_train, w_train)
@@ -61,8 +59,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     model.to(config.device)
     if config.use_dp and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
-    #optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
-    optimizer = Adam(model.parameters(), lr=config.lr)
+    optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
+    #optimizer = Adam(model.parameters(), lr=config.lr)
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
     best_valid_score = np.inf
@@ -146,9 +144,8 @@ class Trainer:
                 es_cnt += 1
 
             print('loss:  {:.4f}, val_loss {:.4f}, '\
-                  'val_score {:.4f}, best_val_score {:.4f}'.format(train_loss, valid_loss, valid_score,
-                                                                   self.best_valid_score))
-            print('time used: ', time.time() - start_time)
+                  'val_score {:.4f}, best_val_score {:.4f}, time used: {:.3f}s'.format(train_loss, valid_loss, valid_score,
+                                                                   self.best_valid_score, time.time() - start_time))
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
                            f"[fold{self.fold}] avg_train_loss": train_loss,
@@ -188,7 +185,7 @@ class Trainer:
             targets = batch[1].to(self.device)
             weights = batch[2].to(self.device)
 
-            with autocast(enabled=True):
+            with autocast(enabled=False):
                 outputs = self.model(X).squeeze()
                 loss = self.criterion(outputs, targets, weights)
             scaler.scale(loss).backward()
@@ -206,11 +203,6 @@ class Trainer:
 
             losses.append(loss2)
             train_loss += loss2
-            if step % self.print_num_steps == 0:
-                train_loss = train_loss.item()
-                print(f'[{step}/{len(train_loader)}] ',
-                      f'avg loss: ', train_loss / step,
-                      f'inst loss: ', loss2.item())
 
         return train_loss.cpu().detach().numpy() / step
 

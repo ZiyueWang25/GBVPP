@@ -1,25 +1,27 @@
 import os
 import util
-
+from argparse import ArgumentParser
 
 class BaseConfig:
     # data
-    kaggle_data_folder = "/media/vincentwang/Backup/kaggle_data/ventilator-pressure-prediction"
-    input_folder = "../input/"
-    output_folder = "../output/"
+    kaggle_data_folder = "/home/vincent/Kaggle/data/ventilator-pressure-prediction"
+    input_folder = "/home/vincent/Kaggle/GBVPP/input/"
+    output_folder = "/home/vincent/Kaggle/GBVPP/output/"
 
     # general
     debug = False
-    model_version = "BasicTest"
-    model_module = "Fork"
+    model_version = "base_version"
+    model_module = "base_module"
     PL_folder = None
     seed = 48
     ckpt_folder = None
+    use_lr_finder = False
 
     # preprocessing
     low_q = 0.05
     high_q = 0.95
     unit_var = True
+    strict_scale = False
 
     # LSTM
     hidden = [512, 256, 128, 64]
@@ -28,31 +30,43 @@ class BaseConfig:
     do_prob = 0.1
 
     # training
-    epochs = 20
-    es = 10
-    train_folds = [0]
-    batch_size = 1024
-    lr = 1e-3
+    epochs = 300
+    es = 20
+    train_folds = [0, 1, 2, 3, 4]
+    batch_size = 512
+    lr = 5e-2
     weight_decay = 1e-4
     warmup = 0.1
     scheduler = 'cosineWithWarmUp'
 
     # swa
+    ## TODO: add SWA
     use_swa = False
 
     # logging
-    use_wandb = False
+    use_wandb = True
     wandb_project = "GBVPP"
-    wandb_key_path = "../input/key.txt"
+    wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
     wandb_post = ""
     print_num_steps = 100
 
     # speed
-    num_workers = 2
+    num_workers = 8
     use_dp = True
 
 
-def updateConfig(config):
+class LSTM4_do01(BaseConfig):
+    model_version = "4LSTM_do01"
+    model_module = "LSTM_CustomHead"
+    hidden = [512, 256, 128, 64]
+
+
+class LSTM4_do02(LSTM4_do01):
+    model_version = "4LSTM_do02"
+    do_prob = 0.2
+
+
+def update_config(config):
     config.model_output_folder = config.output_folder + config.model_version + "/"
     if config.ckpt_folder:
         config.ckpt_folder = config.model_output_folder
@@ -66,7 +80,22 @@ def updateConfig(config):
     return config
 
 
-def read_config(name="base"):
-    config_list = {"base": BaseConfig}
-    assert name in config_list, "name is not in config_list.keys()" + list(config_list.keys())
-    return config_list[name]
+config_dict = {"base": BaseConfig, "LSTM4_do01": LSTM4_do01, "LSTM4_do02": LSTM4_do02}
+
+
+def read_config(name="base", debug=False):
+    assert name in config_dict, "name is not in config_list.keys()" + list(config_dict.keys())
+    config = config_dict[name]
+    if debug:
+        print("---- DEBUG -----")
+        config.debug = debug
+    return config
+
+
+
+def prepare_args():
+    parser = ArgumentParser()
+    parser.add_argument('--model_config', type=str, help='configuration name for this run')
+    parser.add_argument('--debug', nargs='?', type=int, const=0, help='in debug mode or not')
+    args = parser.parse_args()
+    return args

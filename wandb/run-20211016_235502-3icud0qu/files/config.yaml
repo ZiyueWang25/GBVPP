@@ -1,0 +1,143 @@
+wandb_version: 1
+
+PL_folder:
+  desc: null
+  value: null
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.4
+    framework: huggingface
+    huggingface_version: 4.11.3
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.8.10
+    start_time: 1634442902
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      2:
+      - 1
+      - 5
+      - 11
+      3:
+      - 2
+      - 13
+      - 16
+      4: 3.8.10
+      5: 0.12.4
+      6: 4.11.3
+      8:
+      - 5
+batch_size:
+  desc: null
+  value: 512
+bidirectional:
+  desc: null
+  value: true
+ckpt_folder:
+  desc: null
+  value: null
+debug:
+  desc: null
+  value: true
+device:
+  desc: null
+  value: cuda
+do_prob:
+  desc: null
+  value: 0.1
+epochs:
+  desc: null
+  value: 1
+es:
+  desc: null
+  value: 20
+hidden:
+  desc: null
+  value:
+  - 512
+  - 256
+  - 128
+  - 64
+high_q:
+  desc: null
+  value: 0.95
+input_folder:
+  desc: null
+  value: /home/vincent/Kaggle/GBVPP/input/
+kaggle_data_folder:
+  desc: null
+  value: /home/vincent/Kaggle/data/ventilator-pressure-prediction
+low_q:
+  desc: null
+  value: 0.05
+lr:
+  desc: null
+  value: 0.05
+model_module:
+  desc: null
+  value: LSTM_CustomHead
+model_output_folder:
+  desc: null
+  value: /home/vincent/Kaggle/GBVPP/output/4LSTM_do01/
+model_version:
+  desc: null
+  value: 4LSTM_do01
+nh:
+  desc: null
+  value: 256
+num_workers:
+  desc: null
+  value: 8
+output_folder:
+  desc: null
+  value: /home/vincent/Kaggle/GBVPP/output/
+print_num_steps:
+  desc: null
+  value: 100
+scheduler:
+  desc: null
+  value: cosineWithWarmUp
+seed:
+  desc: null
+  value: 48
+strict_scale:
+  desc: null
+  value: false
+train_folds:
+  desc: null
+  value:
+  - 0
+unit_var:
+  desc: null
+  value: true
+use_dp:
+  desc: null
+  value: true
+use_lr_finder:
+  desc: null
+  value: false
+use_swa:
+  desc: null
+  value: false
+use_wandb:
+  desc: null
+  value: true
+wandb_key_path:
+  desc: null
+  value: /home/vincent/Kaggle/GBVPP/input/key.txt
+wandb_post:
+  desc: null
+  value: ''
+wandb_project:
+  desc: null
+  value: GBVPP
+warmup:
+  desc: null
+  value: 0.1
+weight_decay:
+  desc: null
+  value: 0.0001

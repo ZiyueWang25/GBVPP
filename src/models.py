@@ -47,6 +47,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         for i in range(len(self.lstms)):
+            self.lstms[i].flatten_parameters()
             x, _ = self.lstms[i](x)
         x = self.fc1(x)
         x = self.act(x)
@@ -55,3 +56,5 @@ class Model(nn.Module):
         # x = self.head(x)
         # x = x.reshape(-1, 80, 1)
         return x
+
+## TODO: transformer based model

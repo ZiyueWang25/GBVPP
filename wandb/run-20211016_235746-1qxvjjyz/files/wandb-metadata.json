@@ -1,0 +1,29 @@
+{
+    "os": "Linux-5.11.0-37-generic-x86_64-with-glibc2.29",
+    "python": "3.8.10",
+    "heartbeatAt": "2021-10-17T03:57:47.756144",
+    "startedAt": "2021-10-17T03:57:46.720444",
+    "docker": null,
+    "gpu": "NVIDIA GeForce RTX 2080 Ti",
+    "gpu_count": 2,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [
+        "--model_config",
+        "LSTM4_do01",
+        "--debug",
+        "0"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "git@github.com:VincentWang25/GBVPP.git",
+        "commit": "ff6812043df84797075965c3476bcd0a6090e1a5"
+    },
+    "email": null,
+    "root": "/home/vincent/Kaggle/GBVPP",
+    "host": "vincent-station",
+    "username": "vincent",
+    "executable": "/usr/bin/python3"
+}
