@@ -5,10 +5,14 @@ from train_helper import training_loop
 from dataset import read_data
 from FE import add_features
 from config import read_config, update_config, prepare_args
+import os
 
 if __name__ == "__main__":
     arg = prepare_args()
+    print(arg.gpu)
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(x) for x in arg.gpu)
     config = read_config(arg.model_config, arg.debug)
+    config.gpu = arg.gpu
     config = update_config(config)
     if config is not None:
         print("Training with ", arg.model_config, " Configuration")

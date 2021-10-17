@@ -88,6 +88,9 @@ def prepare_train_valid(train_df, config, fold):
     X_valid = X_valid.reshape(-1, 80, len(feature_cols))
     y_valid = valid['pressure'].values.reshape(-1, 80)
     w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
+    if not config.use_in_phase_only:
+        w_train = (w_train >= 0).astype(int)
+        w_valid = (w_valid >= 0).astype(int)
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
 

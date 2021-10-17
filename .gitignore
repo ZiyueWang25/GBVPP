@@ -1,4 +1,5 @@
-wandb/
+wandb/*
+wandb/latest-run/
 pic/
 input/
 output/

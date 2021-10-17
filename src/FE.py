@@ -4,6 +4,7 @@ import pandas as pd
 def add_features(df):
     ## TODO: Add features from public notebook
 
+
     df["step"] = list(range(80)) * (df.shape[0] // 80)
     # need robust process
     df['area'] = df['time_step'] * df['u_in']

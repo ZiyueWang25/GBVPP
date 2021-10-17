@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torch.optim.swa_utils import AveragedModel
 from dataset import *
-import models
+from models import get_model
 
 
 def get_pred(loader, model, device):
@@ -36,7 +36,7 @@ def get_test_avg(test_df, config):
                                  shuffle=False,
                                  num_workers=config.num_workers, pin_memory=True, drop_last=False)
 
-        model = models.Model(X_test.shape[-1], config)
+        model = get_model(X_test.shape[-1], config)
         if config.use_swa:
             swa_model = AveragedModel(model)
             checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_swa_model.pth')
@@ -46,7 +46,7 @@ def get_test_avg(test_df, config):
             checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_best_model.pth')
             model.load_state_dict(removeDPModule(checkpoint['model_state_dict']))
         model.to(device=config.device)
-        if config.use_dp and torch.cuda.device_count() > 1:
+        if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
         model.eval()
         test_avg[f"preds_fold{fold}"] = get_pred(data_loader, model, config.device)

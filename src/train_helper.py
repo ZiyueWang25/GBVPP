@@ -8,7 +8,7 @@ import wandb
 
 from util import *
 from dataset import *
-from models import Model
+from models import get_model
 from loss import cal_mae_loss
 from metric import cal_mae_metric
 from FE import add_features
@@ -54,10 +54,10 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
                               shuffle=False,
                               num_workers=config.num_workers, pin_memory=True, drop_last=False)
 
-    model = Model(X_train.shape[-1], config)
+    model = get_model(X_train.shape[-1], config)
     print("Model Size: {}".format(get_n_params(model)))
     model.to(config.device)
-    if config.use_dp and torch.cuda.device_count() > 1:
+    if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
     optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
     #optimizer = Adam(model.parameters(), lr=config.lr)
@@ -121,7 +121,7 @@ class Trainer:
         for n_epoch in range(epochs):
             start_time = time.time()
             print('Epoch: ', n_epoch)
-            train_loss = self.train_epoch(train_loader)
+            train_loss, lr = self.train_epoch(train_loader)
             valid_loss, valid_preds = self.valid_epoch(valid_loader, self.model)
 
             if self.swa_model is not None:
@@ -143,9 +143,9 @@ class Trainer:
             else:
                 es_cnt += 1
 
-            print('loss:  {:.4f}, val_loss {:.4f}, '\
-                  'val_score {:.4f}, best_val_score {:.4f}, time used: {:.3f}s'.format(train_loss, valid_loss, valid_score,
-                                                                   self.best_valid_score, time.time() - start_time))
+            print('loss:  {:.4f}, val_loss {:.4f}, val_score {:.4f}, best_val_score {:.4f}, lr {:.5f} '
+                  '--- use {:.3f}s'.format(train_loss, valid_loss, valid_score, self.best_valid_score, lr,
+                                           time.time() - start_time))
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
                            f"[fold{self.fold}] avg_train_loss": train_loss,
@@ -204,7 +204,7 @@ class Trainer:
             losses.append(loss2)
             train_loss += loss2
 
-        return train_loss.cpu().detach().numpy() / step
+        return train_loss.cpu().detach().numpy() / step, lr2
 
     def valid_epoch(self, valid_loader, model):
         model.eval()
@@ -223,7 +223,6 @@ class Trainer:
         return np.mean(valid_loss), predictions
 
     def save_model(self, n_epoch, save_path, valid_preds):
-        print("Save Model")
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),

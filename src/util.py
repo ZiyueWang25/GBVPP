@@ -43,7 +43,7 @@ def get_scheduler(optimizer, train_size, config):
                              cycle_momentum=False)
     elif config.scheduler == 'cosineWithWarmUp':
         epoch_step = train_size / config.batch_size
-        num_warmup_steps = int(config.warmup * epoch_step * config.epochs)
+        num_warmup_steps = int(epoch_step * config.warmup)
         num_training_steps = int(epoch_step * config.epochs)
         scheduler = get_cosine_schedule_with_warmup(optimizer,
                                                     num_warmup_steps=num_warmup_steps,
@@ -76,7 +76,8 @@ def class2dict(f):
     return dict((name, getattr(f, name)) for name in dir(f) if not name.startswith('__'))
 
 
-def get_device():
+def get_device(config):
+    os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in config.gpu)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)
     print('Number of device:', torch.cuda.device_count())
