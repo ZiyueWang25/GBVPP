@@ -18,10 +18,11 @@ class BaseConfig:
     use_lr_finder = False
 
     # preprocessing
-    low_q = 0.05
-    high_q = 0.95
+    low_q = 5
+    high_q = 95
     unit_var = True
-    strict_scale = False
+    strict_scale = True
+    fe_type = "own"
 
     # LSTM
     hidden = [512, 256, 128, 64]
@@ -34,7 +35,7 @@ class BaseConfig:
     es = 20
     train_folds = [0, 1, 2, 3, 4]
     batch_size = 512
-    lr = 5e-2
+    lr = 1e-3
     weight_decay = 1e-4
     warmup = 10
     scheduler = 'cosineWithWarmUp'
@@ -45,7 +46,7 @@ class BaseConfig:
     use_swa = False
 
     # logging
-    use_wandb = False
+    use_wandb = True
     wandb_project = "GBVPP"
     wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
     wandb_post = ""
@@ -62,9 +63,35 @@ class LSTM4_do01(BaseConfig):
     use_in_phase_only = False
 
 
-class LSTM4_do02(LSTM4_do01):
-    model_version = "4LSTM_do02"
-    do_prob = 0.2
+class LSTM4_do03(LSTM4_do01):
+    model_version = "4LSTM_do03"
+    do_prob = 0.3
+
+class LSTM4_do05(LSTM4_do01):
+    model_version = "4LSTM_do05"
+    do_prob = 0.5
+
+
+class LSTM5_do01(BaseConfig):
+    model_version = "5LSTM_do01"
+    hidden = [1024, 512, 256, 128, 64]
+    do_prob = 0.1
+
+
+class Fork(BaseConfig):
+    model_version = "fork"
+    model_module = "BASE"
+    low_q = 25
+    high_q = 75
+    batch_size = 1024
+    unit_var = False
+    fe_type = "fork"
+    hidden = [400, 300, 200, 100]
+    use_in_phase_only = False
+
+    scheduler = 'ReduceLROnPlateau'
+    factor = 0.5
+    patience = 10
 
 
 def update_config(config):
@@ -82,7 +109,10 @@ def update_config(config):
     return config
 
 
-config_dict = {"base": BaseConfig, "LSTM4_do01": LSTM4_do01, "LSTM4_do02": LSTM4_do02}
+config_dict = {"base": BaseConfig, "Fork": Fork,
+               "LSTM4_do01": LSTM4_do01, "LSTM4_do03": LSTM4_do03,
+               "LSTM4_do05": LSTM4_do05, "LSTM5_do01": LSTM5_do01,
+}
 
 
 def read_config(name="base", debug=False):

@@ -11,7 +11,6 @@ from dataset import *
 from models import get_model
 from loss import cal_mae_loss
 from metric import cal_mae_metric
-from FE import add_features
 
 
 def training_loop(train_df, config):
@@ -38,6 +37,7 @@ def training_loop(train_df, config):
 
 
 def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epoch=None, **kwargs):
+    ## TODO: add PL
     train_df = generate_PL(fold, original_train_df.copy(), config)
     X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
@@ -59,8 +59,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     model.to(config.device)
     if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
-    optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
-    #optimizer = Adam(model.parameters(), lr=config.lr)
+    #optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
+    optimizer = Adam(model.parameters(), lr=config.lr)
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
     best_valid_score = np.inf
@@ -69,8 +69,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
         checkpoint = torch.load(f'{config.ckpt_folder}/Fold_{fold}_best_model.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         best_valid_score = float(checkpoint['best_valid_score'])
-
-    trainer = Trainer(model, optimizer, cal_mae_loss, scheduler,
+    criterion = cal_mae_loss # torch.nn.L1Loss() #cal_mae_loss
+    trainer = Trainer(model, optimizer, criterion, scheduler,
                       y_valid, w_valid,
                       best_valid_score, fold, config,
                       swa_model=swa_model, swa_scheduler=swa_scheduler,
@@ -192,9 +192,9 @@ class Trainer:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
             scaler.update()
-
-            self.scheduler.step()
-            lr2 = self.scheduler.get_last_lr()[0]
+            if not isinstance(self.scheduler, ReduceLROnPlateau):
+                self.scheduler.step()
+            lr2 = self.optimizer.param_groups[0]['lr']
             loss2 = loss.detach()
 
             if self.use_wandb:

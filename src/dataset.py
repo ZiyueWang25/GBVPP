@@ -26,10 +26,9 @@ class VPP(torch.utils.data.Dataset):
 
 
 class LR_VPP(torch.utils.data.Dataset):
-    def __init__(self, X, y, w, batch_size):
+    def __init__(self, X, y, w):
         if y is None:
             y = np.zeros(len(X), dtype=np.float32)
-        self.bath_size = batch_size
         self.X = X.astype(np.float32)
         self.y = y.astype(np.float32)
         self.w = w.astype(np.float32)
@@ -57,14 +56,14 @@ def read_data(config):
     test = changeType(test, False)
     with open(config.input_folder + '/id_fold_dict.pickle', 'rb') as handle:
         id_fold_dict = pickle.load(handle)
-    train['fold'] = train['id'].apply(lambda x: id_fold_dict[x])
+    train['fold'] = train['breath_id'].apply(lambda x: id_fold_dict[x])
     return train, test
 
 
 def prepare_train_valid(train_df, config, fold):
     train_index, valid_index = train_df.query(f"fold!={fold}").index, train_df.query(f"fold=={fold}").index
     rs = RobustScaler(quantile_range=(config.low_q, config.high_q), unit_variance=config.unit_var)
-    train, valid = train_df.loc[train_index], train_df.loc[valid_index]
+    train, valid = train_df.iloc[train_index], train_df.iloc[valid_index]
     if config.strict_scale:
         print("Use scale to fit train and scale valid")
         print("Prepare train valid")
@@ -76,10 +75,10 @@ def prepare_train_valid(train_df, config, fold):
 
         dump(rs, open(config.model_output_folder + f'/scaler_{fold}.pkl', 'wb'))
     else:
+        print("Unsctrict scale - leakage..")
         feature_cols = [col for col in train_df.columns if col not in ["id", "breath_id", "fold", "pressure"]]
         X_all = rs.fit_transform(train_df[feature_cols])
         X_train, X_valid = X_all[train_index, :], X_all[valid_index, :]
-
         dump(rs, open(config.model_output_folder + f'/scaler.pkl', 'wb'))
 
     X_train = X_train.reshape(-1, 80, len(feature_cols))

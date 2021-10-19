@@ -3,7 +3,7 @@ sys.path.append("./src/")
 from util import *
 from train_helper import training_loop
 from dataset import read_data
-from FE import add_features
+from FE import add_features_choice
 from config import read_config, update_config, prepare_args
 import os
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
         print("Training with ", arg.model_config, " Configuration")
         train, _ = read_data(config)
         print("Read Data: ", train.shape)
-        train = add_features(train)
+        train = add_features_choice(train, config)
         print("Build Features: ", train.shape)
         seed_torch(seed=config.seed)
         training_loop(train.copy(), config)

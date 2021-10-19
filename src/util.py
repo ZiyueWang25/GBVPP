@@ -18,7 +18,7 @@ def seed_torch(seed=42):
 def get_scheduler(optimizer, train_size, config):
     if config.scheduler == 'ReduceLROnPlateau':
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=config.factor,
-                                      patience=config.patience, verbose=True, eps=config.eps)
+                                      patience=config.patience, verbose=True)
     elif config.scheduler == 'CosineAnnealingLR':
         scheduler = CosineAnnealingLR(optimizer,
                                       T_max=config.T_max,
