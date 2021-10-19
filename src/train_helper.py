@@ -1,6 +1,5 @@
 import time
 from torch import nn
-from torch.optim import AdamW, Adam
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
 from torch.optim.swa_utils import update_bn
@@ -9,8 +8,9 @@ import wandb
 from util import *
 from dataset import *
 from models import get_model
-from loss import cal_mae_loss
+from loss import cal_mae_loss, cal_ce_loss
 from metric import cal_mae_metric
+from optimizer import get_optimizer
 
 
 def training_loop(train_df, config):
@@ -59,8 +59,7 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     model.to(config.device)
     if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
-    #optimizer = AdamW(model.parameters(), lr=config.lr, eps=1e-08, weight_decay=config.weight_decay, amsgrad=False)
-    optimizer = Adam(model.parameters(), lr=config.lr)
+    optimizer = get_optimizer(model, config)
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
     best_valid_score = np.inf
@@ -69,7 +68,7 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
         checkpoint = torch.load(f'{config.ckpt_folder}/Fold_{fold}_best_model.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         best_valid_score = float(checkpoint['best_valid_score'])
-    criterion = cal_mae_loss # torch.nn.L1Loss() #cal_mae_loss
+    criterion = cal_mae_loss if config.do_reg else cal_ce_loss
     trainer = Trainer(model, optimizer, criterion, scheduler,
                       y_valid, w_valid,
                       best_valid_score, fold, config,
@@ -150,7 +149,9 @@ class Trainer:
                 wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
                            f"[fold{self.fold}] avg_train_loss": train_loss,
                            f"[fold{self.fold}] avg_val_loss": valid_loss,
-                           f"[fold{self.fold}] val_score": valid_score})
+                           f"[fold{self.fold}] val_score": valid_score,
+                           f"[fold{self.fold}] best_val_score": self.best_valid_score,
+                           })
                 # save swa
             if es_cnt >= self.es:
                 print("Early Stop")

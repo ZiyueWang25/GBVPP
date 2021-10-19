@@ -50,8 +50,17 @@ def changeType(data, is_train=True):
 
 def read_data(config):
     n = 100*1024 if config.debug else None
-    train = pd.read_csv(config.kaggle_data_folder + "/train.csv", nrows=n)
-    test = pd.read_csv(config.kaggle_data_folder + "/test.csv", nrows=n)
+    dict_types = {
+        'id': np.int32,
+        'breath_id': np.int32,
+        'R': np.int8,
+        'C': np.int8,
+        'time_step': np.float32,
+        'u_in': np.float32,
+        'u_out': np.int8,  # np.bool ?
+    }
+    train = pd.read_csv(config.kaggle_data_folder + "/train.csv", nrows=n, dtype=dict_types)
+    test = pd.read_csv(config.kaggle_data_folder + "/test.csv", nrows=n, dtype=dict_types)
     train = changeType(train, True)
     test = changeType(test, False)
     with open(config.input_folder + '/id_fold_dict.pickle', 'rb') as handle:

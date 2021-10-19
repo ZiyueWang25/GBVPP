@@ -14,7 +14,7 @@ def get_pred(loader, model, device):
         with torch.no_grad():
             X = batch[0].to(device)
             outputs = model(X)
-            outputs = outputs.squeeze().sigmoid().cpu().detach().numpy()
+            outputs = outputs.squeeze().cpu().detach().numpy()
             preds.append(outputs)
     predictions = np.concatenate(preds)
     predictions = predictions.flatten()
