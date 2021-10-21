@@ -4,15 +4,19 @@ from argparse import ArgumentParser
 
 ## TODO:
 ## 1. classification problem
-## 2. transformer
-## 3. Pseudo Labeling
-## 4.
+## 2. transformer based model
+## 3. add SWA
+## 4. add more features
+## 5. TabNet
+
 
 class Base:
     # data
     kaggle_data_folder = "/home/vincent/Kaggle/data/ventilator-pressure-prediction"
     input_folder = "/home/vincent/Kaggle/GBVPP/input/"
     output_folder = "/home/vincent/Kaggle/GBVPP/output/"
+    wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
+
 
     # general
     debug = False
@@ -35,9 +39,10 @@ class Base:
     bidirectional = True
     nh = 256
     do_prob = 0.1
+    fc = 50
 
     # training
-    do_reg  = True
+    do_reg = False
     epochs = 200
     es = 20
     train_folds = [0]
@@ -48,6 +53,8 @@ class Base:
     warmup = 20
     scheduler = 'cosineWithWarmUp'
     use_in_phase_only = True
+    ## Loss function
+    loss_fnc = "mae"
 
     # swa
     ## TODO: add SWA
@@ -56,7 +63,6 @@ class Base:
     # logging
     use_wandb = True
     wandb_project = "GBVPP"
-    wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
     wandb_post = ""
     print_num_steps = 100
 
@@ -99,9 +105,31 @@ class LSTM5_do0(LSTM4_do0):
     hidden = [1024, 512, 256, 128, 64]
 
 
-class LSTM4_base(LSTM4_do0):
-    model_version = "4LSTM_base"
+class LSTM4_do0_epoch300(LSTM4_do0):
+    model_version = "LSTM4_do0_epoch300"
+    epochs = 300
+
+class LSTM4_do0_epoch300_ROP(LSTM4_do0):
+    model_version = "LSTM4_do0_epoch300_ROP"
+    scheduler = 'ReduceLROnPlateau'
+    factor = 0.5
+    patience = 10
+    epochs = 300
+
+class LSTM4_base_epoch300(LSTM4_do0):
+    model_version = "LSTM4_base_epoch300"
     model_module = "BASE"
+    epochs = 300
+
+
+class LSTM4_base_epoch300_ROP(LSTM4_do0):
+    # best
+    model_version = "LSTM4_base_epoch300_ROP"
+    model_module = "BASE"
+    scheduler = 'ReduceLROnPlateau'
+    factor = 0.5
+    patience = 10
+    epochs = 300
 
 
 class LSTM4_do0_IP(LSTM4_do0):
@@ -112,6 +140,46 @@ class LSTM4_do0_IP(LSTM4_do0):
 class LSTM5_do0_IP(LSTM5_do0):
     model_version = "5LSTM_do0_IP"
     use_in_phase_only = True
+
+
+# huber loss
+class LSTM4_base_Huber_delta05(Base):
+    # best
+    model_version = "LSTM4_base_Huber_delta05"
+    model_module = "BASE"
+    scheduler = 'ReduceLROnPlateau'
+    factor = 0.5
+    patience = 10
+    epochs = 300
+    # loss
+    loss_fnc = "huber"
+    delta = 0.5
+
+
+class LSTM4_base_Huber_delta025(LSTM4_base_Huber_delta05):
+    model_version = "LSTM4_base_Huber_delta025"
+    delta = .25
+
+
+class LSTM4_base_Huber_delta1(LSTM4_base_Huber_delta05):
+    model_version = "LSTM4_base_Huber_delta1"
+    delta = 1
+
+
+class LSTM4_base_Huber_delta2(LSTM4_base_Huber_delta05):
+    model_version = "LSTM4_base_Huber_delta2"
+    delta = 2
+
+
+class LSTM4_base_epoch300_ROP_FC128(LSTM4_base_epoch300_ROP):
+    # best
+    model_version = "LSTM4_base_epoch300_ROP_FC128"
+    fc = 128
+
+class LSTM4_base_epoch300_ROP_NoUnitVar(LSTM4_base_epoch300_ROP):
+    # best
+    model_version = "LSTM4_base_epoch300_ROP_unitVar"
+    unit_var = False
 
 
 class ClsBase(Base):
@@ -129,6 +197,7 @@ class ClsBase(Base):
     all_features = cat_features + cont_features + lag_features
     not_watch_param = ['INPUT']
 
+
 def update_config(config):
     config.model_output_folder = config.output_folder + config.model_version + "/"
     if config.ckpt_folder:
@@ -145,7 +214,7 @@ def update_config(config):
 
 
 def read_config(name, arg=None):
-    assert name in globals(), "name is not in config_list.keys()" + list(config_dict.keys())
+    assert name in globals(), "name is not in " + str(globals())
     config = globals()[name]
     if arg is not None:
         config.gpu = arg.gpu

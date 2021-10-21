@@ -8,7 +8,7 @@ import wandb
 from util import *
 from dataset import *
 from models import get_model
-from loss import cal_mae_loss, cal_ce_loss
+from loss import get_loss
 from metric import cal_mae_metric
 from optimizer import get_optimizer
 
@@ -37,7 +37,6 @@ def training_loop(train_df, config):
 
 
 def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epoch=None, **kwargs):
-    ## TODO: add PL
     train_df = generate_PL(fold, original_train_df.copy(), config)
     X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
@@ -68,7 +67,7 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
         checkpoint = torch.load(f'{config.ckpt_folder}/Fold_{fold}_best_model.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         best_valid_score = float(checkpoint['best_valid_score'])
-    criterion = cal_mae_loss if config.do_reg else cal_ce_loss
+    criterion = get_loss(config)
     trainer = Trainer(model, optimizer, criterion, scheduler,
                       y_valid, w_valid,
                       best_valid_score, fold, config,
@@ -87,13 +86,14 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
 class Trainer:
     def __init__(self, model, optimizer, criterion, scheduler,
                  y_valid, w_valid,
-                 best_valid_score, fold, config, mixed_criterion=None,
+                 best_valid_score, fold, config,
                  swa_model=None, swa_scheduler=None, swa_start_step=None,
                  swa_start_epoch=None, **kwargs):
         self.model = model
         self.device = config.device
         self.optimizer = optimizer
         self.criterion = criterion
+        self.use_in_phase_only = config.use_in_phase_only
         self.scheduler = scheduler
         self.best_valid_score = best_valid_score
         self.y_valid = y_valid
@@ -188,7 +188,7 @@ class Trainer:
 
             with autocast(enabled=False):
                 outputs = self.model(X).squeeze()
-                loss = self.criterion(outputs, targets, weights)
+                loss = self.criterion(outputs, targets, weights, self.use_in_phase_only)
             scaler.scale(loss).backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
@@ -217,7 +217,7 @@ class Trainer:
                 targets = batch[1].to(self.device)
                 weights = batch[2].to(self.device)
                 outputs = model(X).squeeze()
-                loss = self.criterion(outputs, targets, weights)
+                loss = self.criterion(outputs, targets, weights, self.use_in_phase_only)
                 valid_loss.append(loss.detach().item())
                 preds.append(outputs.to('cpu').detach().numpy())
         predictions = np.concatenate(preds, axis=0)

@@ -21,18 +21,30 @@ def get_pred(loader, model, device):
     return predictions
 
 
+def get_cv_score(config):
+    cv_scores = []
+    for fold in tqdm(config.train_folds):
+        checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_best_model.pth')
+        cv_scores.append(checkpoint['best_valid_score'])
+    print("CV_Scores:", cv_scores)
+    print("Mean : {:.5f}".format(np.mean(cv_scores)))
+    print("Std : {:.5f}".format(np.std(cv_scores)))
+    return np.mean(cv_scores)
+
+
 def removeDPModule(state_dict):
     return {key.replace("module.", ""): value for key, value in state_dict.items()}
 
 
-def get_test_avg(test_df, config):
+def get_test_avg(test_df, config, cv):
     test_df['pressure'] = 0
     test_avg = test_df[['id', 'pressure']].copy()
+    cv_str = "{:.0f}".format(cv * 1e5)
     for fold in tqdm(config.train_folds):
         X_test, y_test, w_test = prepare_test(test_df, config, fold)
         data_retriever = VPP(X_test, y_test, w_test)
         data_loader = DataLoader(data_retriever,
-                                 batch_size=config.batch_size,
+                                 batch_size=config.batch_size//2,
                                  shuffle=False,
                                  num_workers=config.num_workers, pin_memory=True, drop_last=False)
 
@@ -51,9 +63,10 @@ def get_test_avg(test_df, config):
         model.eval()
         test_avg[f"preds_fold{fold}"] = get_pred(data_loader, model, config.device)
         test_avg["pressure"] = test_avg["pressure"] + test_avg[f"preds_fold{fold}"] / len(config.train_folds)
-        test_avg[["id", f"preds_fold{fold}"]].to_csv(config.model_output_folder + f"/test_fold{fold}.csv", index=False)
-    test_avg.to_csv(config.model_output_folder + f"/test_pred_all.csv", index=False)
-    test_avg[['id', 'pressure']].to_csv(config.model_output_folder + f"/submission.csv", index=False)
+        test_avg[["id", f"preds_fold{fold}"]].to_csv(config.model_output_folder + f"/test_fold{fold}.csv",
+                                                     index=False)
+    test_avg.to_csv(config.model_output_folder + f"/test_pred_all_{cv_str}.csv", index=False)
+    test_avg[['id', 'pressure']].to_csv(config.model_output_folder + f"/submission_{cv_str}.csv", index=False)
     print(test_avg['pressure'].describe())
-    print("test file saved to:", config.model_output_folder + f"/submission.csv")
+    print("test file saved to:", config.model_output_folder + f"/submission_{cv_str}.csv")
     return test_avg

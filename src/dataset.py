@@ -40,29 +40,19 @@ class LR_VPP(torch.utils.data.Dataset):
         return self.X[i], self.y[i], self.w[i]
 
 
-def changeType(data, is_train=True):
-    dtypes = {"id": np.uint32, "breath_id": np.uint32, "R": np.uint32, "C": np.uint32,
-              "time_step": np.float32, "u_in": np.float32, "u_out": np.int8}
-    if is_train:
-        dtypes["pressure"] = np.float32
-    return data.astype(dtypes)
-
-
 def read_data(config):
     n = 100*1024 if config.debug else None
     dict_types = {
-        'id': np.int32,
-        'breath_id': np.int32,
-        'R': np.int8,
-        'C': np.int8,
+        'id': np.uint32,
+        'breath_id': np.uint32,
+        'R': np.uint32,
+        'C': np.uint32,
         'time_step': np.float32,
         'u_in': np.float32,
-        'u_out': np.int8,  # np.bool ?
+        'u_out': np.int8,
     }
     train = pd.read_csv(config.kaggle_data_folder + "/train.csv", nrows=n, dtype=dict_types)
     test = pd.read_csv(config.kaggle_data_folder + "/test.csv", nrows=n, dtype=dict_types)
-    train = changeType(train, True)
-    test = changeType(test, False)
     with open(config.input_folder + '/id_fold_dict.pickle', 'rb') as handle:
         id_fold_dict = pickle.load(handle)
     train['fold'] = train['breath_id'].apply(lambda x: id_fold_dict[x])
@@ -96,9 +86,6 @@ def prepare_train_valid(train_df, config, fold):
     X_valid = X_valid.reshape(-1, 80, len(feature_cols))
     y_valid = valid['pressure'].values.reshape(-1, 80)
     w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
-    if not config.use_in_phase_only:
-        w_train = (w_train >= 0).astype(int)
-        w_valid = (w_valid >= 0).astype(int)
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
 
@@ -122,8 +109,7 @@ def generate_PL(fold, train_df, config):
     if config.PL_folder is None:
         return train_df
     n = 100 * 1024 if config.debug else None
-    PL_df = pd.read_csv(config.PL_folder + f"/test_Fold_{fold}.csv", nrows=n)
-    PL_df = changeType(PL_df, False)
+    PL_df = pd.read_csv(config.PL_folder + f"/test_fold{fold}.csv", nrows=n)
     PL_df["pressure"] = PL_df[f'preds_Fold_{fold}']
     PL_df['fold'] = -1
     PL_df = add_features(PL_df)

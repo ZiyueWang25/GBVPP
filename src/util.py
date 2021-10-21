@@ -85,4 +85,6 @@ def get_device(config):
     return device
 
 
-
+def transform_preds(preds, pressure_unique):
+    preds_transformed = list(map(lambda x: pressure_unique[np.abs(pressure_unique - x).argmin()], preds))
+    return preds_transformed

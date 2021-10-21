@@ -9,6 +9,33 @@ def get_model(input_size, config):
         return Model_CH(input_size, config)
 
 
+class my_round_func(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input):
+        return torch.round(input)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_input = grad_output.clone()
+        return grad_input
+
+
+class ScaleLayer(nn.Module):
+    def __init__(self):
+        super(ScaleLayer, self).__init__()
+        self.min = -1.895744294564641
+        self.max = 64.8209917386395
+        self.step = 0.07030214545121005
+        self.my_round_func = my_round_func()
+
+    def forward(self, inputs):
+        steps = inputs.add(-self.min).divide(self.step)
+        int_steps = self.my_round_func.apply(steps)
+        rescaled_steps = int_steps.multiply(self.step).add(self.min)
+        clipped = torch.clamp(rescaled_steps, self.min, self.max)
+        return clipped
+
+
 class Model(nn.Module):
     def __init__(self, input_size, config):
         super().__init__()
@@ -20,9 +47,10 @@ class Model(nn.Module):
             if i > 0 else nn.LSTM(input_size, hidden[0], batch_first=True, bidirectional=use_bi)
             for i in range(len(config.hidden))
         ])
-        self.fc1 = nn.Linear(2 * hidden[-1], 50)
+        self.fc1 = nn.Linear(2 * hidden[-1], config.fc)
         self.act = act
-        self.fc2 = nn.Linear(50, 1)
+        self.fc2 = nn.Linear(config.fc, 1)
+        self.scaler = ScaleLayer()
         self._reinitialize()
 
     def _reinitialize(self):
@@ -55,6 +83,7 @@ class Model(nn.Module):
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)
+        x = self.scaler(x)
         return x
 
 
@@ -73,6 +102,7 @@ class Model_CH(nn.Module):
             nn.Linear(hidden[-1] * 2, config.nh), nn.BatchNorm1d(config.nh), nn.Dropout(config.do_prob), act,
             nn.Linear(config.nh, config.nh), nn.BatchNorm1d(config.nh), nn.Dropout(config.do_prob), act,
             nn.Linear(config.nh, 1),
+            ScaleLayer()
         )
         self._reinitialize()
 
@@ -170,6 +200,3 @@ class VentilatorModel(nn.Module):
             loss = self.loss_fn(logits, y)
 
         return logits, loss
-
-
-## TODO: transformer based model

@@ -62,6 +62,11 @@ def add_features(df):
     df['expand_max'] = g.expanding(1).max().reset_index(level=0, drop=True)
     df['expand_skew'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
     df['expand_kurt'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
+    # transform
+    # df['u_in_max'] = g.transform('max')
+    # df['u_in_mean'] = g.transform('max')
+    # df['u_in__diffmax'] = df['u_in_max']  - df['u_in']
+    # df['u_in__diffmean'] = df['u_in_mean']  - df['u_in']
 
     # Cross Sectional
     RC_u_in_median = df.groupby(["R", "C", "step"])["u_in"].median()
