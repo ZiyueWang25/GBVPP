@@ -6,7 +6,7 @@ from dataset import *
 from models import get_model
 
 
-def get_pred(loader, model, device):
+def get_pred(loader, model, device, do_reg=True):
     preds = []
     for step, batch in enumerate(loader, 1):
         if step % 500 == 0:
@@ -17,13 +17,15 @@ def get_pred(loader, model, device):
             outputs = outputs.squeeze().cpu().detach().numpy()
             preds.append(outputs)
     predictions = np.concatenate(preds)
+    if not do_reg:
+        predictions = predictions.argmax(axis=-1)
     predictions = predictions.flatten()
     return predictions
 
 
 def get_cv_score(config):
     cv_scores = []
-    for fold in tqdm(config.train_folds):
+    for fold in config.train_folds:
         checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_best_model.pth')
         cv_scores.append(checkpoint['best_valid_score'])
     print("CV_Scores:", cv_scores)
@@ -37,12 +39,12 @@ def removeDPModule(state_dict):
 
 
 def get_test_avg(test_df, config, cv):
-    test_df['pressure'] = 0
+    test_df['pressure'] = -999
     test_avg = test_df[['id', 'pressure']].copy()
     cv_str = "{:.0f}".format(cv * 1e5)
     for fold in tqdm(config.train_folds):
         X_test, y_test, w_test = prepare_test(test_df, config, fold)
-        data_retriever = VPP(X_test, y_test, w_test)
+        data_retriever = VPP(X_test, y_test, w_test, config)
         data_loader = DataLoader(data_retriever,
                                  batch_size=config.batch_size//2,
                                  shuffle=False,
@@ -61,10 +63,16 @@ def get_test_avg(test_df, config, cv):
         if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
         model.eval()
-        test_avg[f"preds_fold{fold}"] = get_pred(data_loader, model, config.device)
+        test_avg[f"preds_fold{fold}"] = get_pred(data_loader, model, config.device, config.do_reg)
+        if not config.do_reg:
+            test_avg[f"preds_fold{fold}"] = cls_2_num_func(test_avg[f"preds_fold{fold}"], config.pressure_unique_path)
         test_avg["pressure"] = test_avg["pressure"] + test_avg[f"preds_fold{fold}"] / len(config.train_folds)
         test_avg[["id", f"preds_fold{fold}"]].to_csv(config.model_output_folder + f"/test_fold{fold}.csv",
                                                      index=False)
+    test_avg["pressure"] += 999
+    print("transform")
+    pressure_unique = np.load(config.pressure_unique_path)
+    test_avg["pressure"] = test_avg[f"pressure"].map(lambda x: pressure_unique[np.abs(pressure_unique - x).argmin()])
     test_avg.to_csv(config.model_output_folder + f"/test_pred_all_{cv_str}.csv", index=False)
     test_avg[['id', 'pressure']].to_csv(config.model_output_folder + f"/submission_{cv_str}.csv", index=False)
     print(test_avg['pressure'].describe())

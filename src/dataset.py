@@ -10,13 +10,17 @@ from pickle import dump, load
 
 
 class VPP(torch.utils.data.Dataset):
-    def __init__(self, X, y, w):
-        if y is None:
-            y = np.zeros(len(X), dtype=np.float32)
+    def __init__(self, X, y, w, config=None):
 
         self.X = X.astype(np.float32)
-        self.y = y.astype(np.float32)
         self.w = w.astype(np.float32)
+
+        if y is None:
+            self.y = np.zeros(len(X), dtype=np.float32)
+        elif config.do_reg:
+            self.y = y.astype(np.float32)
+        elif not config.do_reg:
+            self.y = num_2_cls_func(y, config.pressure_unique_path)
 
     def __len__(self):
         return len(self.X)
@@ -26,12 +30,16 @@ class VPP(torch.utils.data.Dataset):
 
 
 class LR_VPP(torch.utils.data.Dataset):
-    def __init__(self, X, y, w):
+    def __init__(self, X, y, w, config=None):
         if y is None:
             y = np.zeros(len(X), dtype=np.float32)
+
         self.X = X.astype(np.float32)
-        self.y = y.astype(np.float32)
         self.w = w.astype(np.float32)
+        if config.do_reg:
+            self.y = y.astype(np.float32)
+        elif not config.do_reg:
+            self.y = num_2_cls_func(y, config.pressure_unique_path)
 
     def __len__(self):
         return self.X.shape[0]
@@ -108,12 +116,43 @@ def prepare_test(test, config, fold):
 def generate_PL(fold, train_df, config):
     if config.PL_folder is None:
         return train_df
+    print("----- USE PL ---- ")
+    pressure_unique = np.load(config.pressure_unique_path)
     n = 100 * 1024 if config.debug else None
-    PL_df = pd.read_csv(config.PL_folder + f"/test_fold{fold}.csv", nrows=n)
-    PL_df["pressure"] = PL_df[f'preds_Fold_{fold}']
+    dict_types = {
+        'id': np.uint32,
+        'breath_id': np.uint32,
+        'R': np.uint32,
+        'C': np.uint32,
+        'time_step': np.float32,
+        'u_in': np.float32,
+        'u_out': np.int8,
+    }
+    PL_df = pd.read_csv(config.kaggle_data_folder + "/test.csv", nrows=n, dtype=dict_types)
+    PL_df["pressure"] = pd.read_csv(config.PL_folder + f"/test_fold{fold}.csv", nrows=n)[f'preds_fold{fold}']
+    if len(PL_df.pressure.unique()) > 950:
+        print("Rounding....")
+        PL_df["pressure"] = PL_df["pressure"].map(lambda x: pressure_unique[np.abs(pressure_unique-x).argmin()])
     PL_df['fold'] = -1
     PL_df = add_features(PL_df)
     PL_df = PL_df[train_df.columns]
     PL_df = pd.concat([train_df, PL_df]).reset_index(drop=True)
     PL_df.reset_index(inplace=True, drop=True)
     return PL_df
+
+
+def num_2_cls_func(y, pressure_unique_path):
+    print("Transform number into class")
+    pressure_unique = np.load(pressure_unique_path)
+    num_to_cls_dict = dict(zip(pressure_unique, list(range(len(pressure_unique)))))
+    num_to_cls_func = np.vectorize(lambda x: num_to_cls_dict[x] if x != -999 else x)
+    return num_to_cls_func(y)
+
+
+def cls_2_num_func(y, pressure_unique_path):
+    print("Transform class into number")
+    pressure_unique = np.load(pressure_unique_path)
+    cls_to_num_dict = dict(zip(list(range(len(pressure_unique))), pressure_unique))
+    cls_to_num_func = np.vectorize(lambda x: cls_to_num_dict[x])
+    return cls_to_num_func(y)
+

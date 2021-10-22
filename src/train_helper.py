@@ -41,8 +41,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
     print('training data samples, val data samples: ', X_train.shape, X_valid.shape)
-    train_dt = VPP(X_train, y_train, w_train)
-    valid_dt = VPP(X_valid, y_valid, w_valid)
+    train_dt = VPP(X_train, y_train, w_train, config)
+    valid_dt = VPP(X_valid, y_valid, w_valid, config)
 
     train_loader = DataLoader(train_dt,
                               batch_size=config.batch_size,
@@ -101,6 +101,9 @@ class Trainer:
         self.fold = fold
         self.max_grad_norm = 100
 
+        self.do_reg = config.do_reg
+        self.pressure_unique_path = config.pressure_unique_path
+
         # swa
         self.swa_model = swa_model
         self.swa_scheduler = swa_scheduler
@@ -120,7 +123,7 @@ class Trainer:
         for n_epoch in range(epochs):
             start_time = time.time()
             print('Epoch: ', n_epoch)
-            train_loss, lr = self.train_epoch(train_loader)
+            train_loss, lr = self.train_epoch(train_loader, n_epoch)
             valid_loss, valid_preds = self.valid_epoch(valid_loader, self.model)
 
             if self.swa_model is not None:
@@ -174,7 +177,7 @@ class Trainer:
             }
             torch.save(save_dict, save_path + f'swa_model.pth')
 
-    def train_epoch(self, train_loader):
+    def train_epoch(self, train_loader, n_epoch):
         scaler = GradScaler()
         self.model.train()
         losses = []
@@ -186,9 +189,11 @@ class Trainer:
             targets = batch[1].to(self.device)
             weights = batch[2].to(self.device)
 
-            with autocast(enabled=False):
+            with autocast(enabled=True):
                 outputs = self.model(X).squeeze()
-                loss = self.criterion(outputs, targets, weights, self.use_in_phase_only)
+                # get rid of NaN
+                loss = self.criterion(targets[outputs == outputs], outputs[outputs == outputs],
+                                      weights[outputs == outputs], self.use_in_phase_only)
             scaler.scale(loss).backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
@@ -200,7 +205,10 @@ class Trainer:
 
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] loss": loss2,
-                           f"[fold{self.fold}] lr": lr2})
+                           f"[fold{self.fold}] lr": lr2,
+                           "epoch": n_epoch,
+                           "batch": step}
+                          )
 
             losses.append(loss2)
             train_loss += loss2
@@ -217,10 +225,12 @@ class Trainer:
                 targets = batch[1].to(self.device)
                 weights = batch[2].to(self.device)
                 outputs = model(X).squeeze()
-                loss = self.criterion(outputs, targets, weights, self.use_in_phase_only)
+                loss = self.criterion(targets, outputs, weights, self.use_in_phase_only)
                 valid_loss.append(loss.detach().item())
                 preds.append(outputs.to('cpu').detach().numpy())
         predictions = np.concatenate(preds, axis=0)
+        if not self.do_reg:
+            predictions = cls_2_num_func(predictions.argmax(axis=-1), self.pressure_unique_path)
         return np.mean(valid_loss), predictions
 
     def save_model(self, n_epoch, save_path, valid_preds):

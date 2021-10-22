@@ -3,12 +3,11 @@ import util
 from argparse import ArgumentParser
 
 ## TODO:
-## 1. classification problem
-## 2. transformer based model
+## 1. transformer based model
+## 2. TabNet
 ## 3. add SWA
 ## 4. add more features
-## 5. TabNet
-
+## 5. Feature Importance Analysis
 
 class Base:
     # data
@@ -16,6 +15,7 @@ class Base:
     input_folder = "/home/vincent/Kaggle/GBVPP/input/"
     output_folder = "/home/vincent/Kaggle/GBVPP/output/"
     wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
+    pressure_unique_path = "/home/vincent/Kaggle/GBVPP/input/pressure_unique.npy"
 
 
     # general
@@ -42,7 +42,7 @@ class Base:
     fc = 50
 
     # training
-    do_reg = False
+    do_reg = True
     epochs = 200
     es = 20
     train_folds = [0]
@@ -50,10 +50,12 @@ class Base:
     optimizer = "AdamW"
     lr = 1e-3
     weight_decay = 1e-4
+    scheduler = 'cosineWithWarmUp' #'ReduceLROnPlateau'
     warmup = 20
-    scheduler = 'cosineWithWarmUp'
-    use_in_phase_only = True
-    ## Loss function
+    factor = 0.5
+    patience = 10
+
+    use_in_phase_only = False
     loss_fnc = "mae"
 
     # swa
@@ -109,12 +111,14 @@ class LSTM4_do0_epoch300(LSTM4_do0):
     model_version = "LSTM4_do0_epoch300"
     epochs = 300
 
+
 class LSTM4_do0_epoch300_ROP(LSTM4_do0):
     model_version = "LSTM4_do0_epoch300_ROP"
     scheduler = 'ReduceLROnPlateau'
     factor = 0.5
     patience = 10
     epochs = 300
+
 
 class LSTM4_base_epoch300(LSTM4_do0):
     model_version = "LSTM4_base_epoch300"
@@ -148,6 +152,7 @@ class LSTM4_base_Huber_delta05(Base):
     model_version = "LSTM4_base_Huber_delta05"
     model_module = "BASE"
     scheduler = 'ReduceLROnPlateau'
+    fc = 128
     factor = 0.5
     patience = 10
     epochs = 300
@@ -176,27 +181,39 @@ class LSTM4_base_epoch300_ROP_FC128(LSTM4_base_epoch300_ROP):
     model_version = "LSTM4_base_epoch300_ROP_FC128"
     fc = 128
 
+
 class LSTM4_base_epoch300_ROP_NoUnitVar(LSTM4_base_epoch300_ROP):
     # best
     model_version = "LSTM4_base_epoch300_ROP_unitVar"
     unit_var = False
 
+class LSTM4_base_Huber_delta05_PL_fc128(LSTM4_base_Huber_delta05):
+    model_version = "LSTM4_base_Huber_delta05_PL_fc128"
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM4_base_epoch300_ROP"
 
-class ClsBase(Base):
+
+class Base_Cls(Base):
+    model_version = "Base_Cls"
     do_reg = False
-    epochs = 50
-    embed_size = 64
-    hidden_size = 256
-    use_lag = 4
-    cat_features = ['R_cate', 'C_cate', 'RC_dot', 'RC_sum']
-    cont_features = ['u_in', 'u_out', 'time_step'] + ['u_in_cumsum', 'u_in_cummean', 'area', 'cross', 'cross2']
-    lag_features = ['breath_time']
-    lag_features += [f'u_in_lag_{i}' for i in range(1, 4 + 1)]
-    lag_features += [f'u_in_time{i}' for i in range(1, 4 + 1)]
-    lag_features += [f'u_out_lag_{i}' for i in range(1, 4 + 1)]
-    all_features = cat_features + cont_features + lag_features
-    not_watch_param = ['INPUT']
+    fc = 128
+    loss_fnc = "ce"
+    scheduler = 'ReduceLROnPlateau'
 
+
+class Cls_CH_do01(Base_Cls):
+    model_module = "CH"
+    model_version = "Cls_CH_do01"
+    do = 0.1
+
+
+class Cls_CH_do025(Cls_CH_do01):
+    model_version = "Cls_CH_do025"
+    do = 0.25
+
+
+class Cls_CH_do05(Cls_CH_do01):
+    model_version = "Cls_CH_do05"
+    do = 0.5
 
 def update_config(config):
     config.model_output_folder = config.output_folder + config.model_version + "/"

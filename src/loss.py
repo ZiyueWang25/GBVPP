@@ -14,10 +14,7 @@ def get_loss(config):
 
 
 def cal_ce_loss(y_true, y_pred, weight, use_in_phase_only):
-    if use_in_phase_only:
-        return nn.CrossEntropyLoss()(y_pred.reshape(-1, 950), y_true.reshape(-1), weight.reshape(-1))
-    else:
-        return nn.CrossEntropyLoss()(y_pred.reshape(-1, 950), y_true.reshape(-1))
+    return nn.CrossEntropyLoss()(y_pred.reshape(-1, 950), y_true.reshape(-1))
 
 
 def cal_mae_loss(y_true, y_pred, weight, use_in_phase_only, config=None):

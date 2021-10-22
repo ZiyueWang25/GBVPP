@@ -63,10 +63,10 @@ def add_features(df):
     df['expand_skew'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
     df['expand_kurt'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
     # transform
-    # df['u_in_max'] = g.transform('max')
-    # df['u_in_mean'] = g.transform('max')
-    # df['u_in__diffmax'] = df['u_in_max']  - df['u_in']
-    # df['u_in__diffmean'] = df['u_in_mean']  - df['u_in']
+    df['u_in_max'] = g.transform('max')
+    df['u_in_mean'] = g.transform('mean')
+    df['u_in_diffmax'] = df['u_in_max'] - df['u_in']
+    df['u_in_diffmean'] = df['u_in_mean'] - df['u_in']
 
     # Cross Sectional
     RC_u_in_median = df.groupby(["R", "C", "step"])["u_in"].median()
@@ -86,12 +86,6 @@ def add_features(df):
 
 
     df = df.fillna(0)
-    # df['breath_id__u_in__max'] = df.groupby(['breath_id'])['u_in'].transform('max')
-    # df['breath_id__u_in__mean'] = df.groupby(['breath_id'])['u_in'].transform('mean')
-    # df['breath_id__u_out__mean'] = df.groupby(['breath_id'])['u_out'].transform('mean')
-    #
-    # df['breath_id__u_in__diffmax'] = df['breath_id__u_in__max'] - df['u_in']
-    # df['breath_id__u_in__diffmean'] = df['breath_id__u_in__mean'] - df['u_in']
     return df
 
 
