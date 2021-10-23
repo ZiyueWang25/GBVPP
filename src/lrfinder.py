@@ -45,7 +45,7 @@ class LRFinder:
 
         with autocast(enabled=False):
             outputs = self.model(X).squeeze()
-            loss = self.criterion(targets, outputs, weights, True)
+            loss = self.criterion(targets, outputs, weights)
         scaler.scale(loss).backward()
         scaler.step(self.optimizer)
         scaler.update()

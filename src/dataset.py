@@ -71,29 +71,33 @@ def prepare_train_valid(train_df, config, fold):
     train_index, valid_index = train_df.query(f"fold!={fold}").index, train_df.query(f"fold=={fold}").index
     rs = RobustScaler(quantile_range=(config.low_q, config.high_q), unit_variance=config.unit_var)
     train, valid = train_df.iloc[train_index], train_df.iloc[valid_index]
+    y_train = train['pressure'].values.reshape(-1, 80)
+    w_train = 1 - train['u_out'].values.reshape(-1, 80)
+    y_valid = valid['pressure'].values.reshape(-1, 80)
+    w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
+    feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
+    no_transform_cols = ['u_out', 'u_out_diff', "u_out_diff_back1", "u_out_diff_back2",
+                         'R_20', 'R_5', 'R_50', 'C_10', 'C_20', 'C_50',
+                         'R_C_20_10', 'R_C_20_20', 'R_C_20_50', 'R_C_50_10', 'R_C_50_20',
+                         'R_C_50_50', 'R_C_5_10', 'R_C_5_20', 'R_C_5_50']
+    transform_cols = [col for col in feature_cols if col not in no_transform_cols]
     if config.strict_scale:
         print("Use scale to fit train and scale valid")
         print("Prepare train valid")
         print(train.shape, valid.shape)
-        feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
-
-        X_train = rs.fit_transform(train[feature_cols])
-        X_valid = rs.transform(valid[feature_cols])
-
+        train[transform_cols] = rs.fit_transform(train[transform_cols])
+        valid[transform_cols] = rs.transform(valid[transform_cols])
+        X_train = train[feature_cols].values
+        X_valid = valid[feature_cols].values
         dump(rs, open(config.model_output_folder + f'/scaler_{fold}.pkl', 'wb'))
     else:
         print("Unsctrict scale - leakage..")
-        feature_cols = [col for col in train_df.columns if col not in ["id", "breath_id", "fold", "pressure"]]
-        X_all = rs.fit_transform(train_df[feature_cols])
-        X_train, X_valid = X_all[train_index, :], X_all[valid_index, :]
+        train_df[transform_cols] = rs.fit_transform(train_df[transform_cols])
+        X_train, X_valid = train_df[train_index, feature_cols], train_df[valid_index, feature_cols]
         dump(rs, open(config.model_output_folder + f'/scaler.pkl', 'wb'))
 
     X_train = X_train.reshape(-1, 80, len(feature_cols))
-    y_train = train['pressure'].values.reshape(-1, 80)
-    w_train = 1 - train['u_out'].values.reshape(-1, 80)
     X_valid = X_valid.reshape(-1, 80, len(feature_cols))
-    y_valid = valid['pressure'].values.reshape(-1, 80)
-    w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
 
@@ -155,4 +159,13 @@ def cls_2_num_func(y, pressure_unique_path):
     cls_to_num_dict = dict(zip(list(range(len(pressure_unique))), pressure_unique))
     cls_to_num_func = np.vectorize(lambda x: cls_to_num_dict[x])
     return cls_to_num_func(y)
+
+
+def transform_weight(w, config):
+    if not config.use_in_phase_only and config.out_phase_weight is not None:
+        w[w == 0] = config.out_phase_weight
+    elif not config.use_in_phase_only and config.out_phase_weight is None:
+        w[w == 0] = 1
+    return w
+
 

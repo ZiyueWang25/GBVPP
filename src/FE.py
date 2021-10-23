@@ -1,66 +1,58 @@
 import pandas as pd
 
+
 def add_features_choice(df, config):
     if config.fe_type == "own":
         return add_features(df)
     elif config.fe_type == "fork":
         return add_features_fork(df)
 
+
 def add_features(df):
-    ## TODO: Add features from public notebook
     df["step"] = list(range(80)) * (df.shape[0] // 80)
-    # need robust process
-    df['time_delta'] = df['time_step'].diff().fillna(0)
-    df['time_delta'].mask(df['time_delta'] < 0, 0, inplace=True)
-    df['tmp'] = df['time_delta'] * df['u_in']
-    df['area'] = df.groupby('breath_id')['tmp'].cumsum()
-    df.drop(columns=["tmp"], inplace=True)
-    df['u_in_cumsum'] = (df['u_in']).groupby(df['breath_id']).cumsum()
 
     # u_out
     df['u_out_diff'] = df.groupby("breath_id")['u_out'].diff().fillna(0)
+    for shift in range(1, 3):
+        df[f'u_out_diff_back{shift}'] = df.groupby('breath_id')['u_out_diff'].shift(-shift)
+    df.fillna(0, inplace=True)
 
     # time
     df['cross_time'] = df['time_step'] * (1 - df['u_out'])
+    df['time_delta'] = df.groupby("breath_id")['time_step'].diff().fillna(0.033098770961621796)
 
     # u_in
     g = df.groupby('breath_id')['u_in']
     df['cross_u_in'] = df['u_in'] * (1 - df['u_out'])
     # u_in: first point, last point
-    first_df = df.iloc[0::80, :]
-    last_df = df.iloc[79::80, :]
-    u_in_first_dict = dict(zip(first_df['breath_id'], first_df['u_in']))
-    df['u_in_first'] = df['breath_id'].map(u_in_first_dict)
-    u_in_last_dict = dict(zip(first_df['breath_id'], last_df['u_in']))
-    df['u_in_last'] = df['breath_id'].map(u_in_last_dict)
-    del u_in_first_dict, u_in_last_dict
-    time_end_dict = dict(zip(last_df['breath_id'], last_df['time_step']))
-    df['time_end'] = df['breath_id'].map(time_end_dict)
-    del last_df, time_end_dict
+    df['u_in_first'] = g.transform(lambda s: s.iloc[0])
+    df['u_in_last'] = g.transform(lambda s: s.iloc[-1])
+    df['time_end'] = df.groupby("breath_id")["time_step"].transform(lambda s: s.iloc[-1])
     # shift
-    for shift in range(1,5):
-        df[f'u_in_lag{shift}'] = g.shift(1)
+    for shift in range(1, 5):
+        df[f'u_in_lag{shift}'] = g.shift(shift)
         df[f'u_in_lag_back{shift}'] = g.shift(-shift)
-    df.fillna(0,inplace=True)
-    # u_in diff
-    df['u_in_diff'] = g.diff().fillna(0)
-    df['u_in_diff_2'] = g.diff(2).fillna(0)
-    df['u_in_diff_4'] = g.diff(4).fillna(0)
+        df[f'u_in_diff{shift}'] = df["u_in"] - df[f'u_in_lag{shift}']
+        df[f'u_in_diff_back{shift}'] = df["u_in"] - df[f'u_in_lag_back{shift}']
+    df.fillna(0, inplace=True)
+    # cumsum
+    df['u_in_cumsum'] = g.cumsum()
+    df['tmp'] = df['time_delta'] * df['u_in']
+    df['area'] = df.groupby('breath_id')['tmp'].cumsum()
+    df.drop(columns=["tmp"], inplace=True)
     # expanding
     df['ewm_u_in_mean'] = g.ewm(halflife=10).mean().reset_index(level=0, drop=True)
     df['ewm_u_in_std'] = g.ewm(halflife=10).std().reset_index(level=0, drop=True)
-    df['ewm_u_in_corr'] = g.ewm(halflife=10).corr().reset_index(level=0, drop=True)
     # rolling
     df['rolling_10_mean'] = g.rolling(window=10, min_periods=1).mean().reset_index(level=0, drop=True)
     df['rolling_10_max'] = g.rolling(window=10, min_periods=1).max().reset_index(level=0, drop=True)
-    df['rolling_10_std'] = g.rolling(window=10, min_periods=1).std().reset_index(level=0, drop=True)
+    df['rolling_10_std'] = g.rolling(window=10, min_periods=5).std().reset_index(level=0, drop=True).fillna(0)
     # expanding
     df['expand_mean'] = g.expanding(1).mean().reset_index(level=0, drop=True)
     df['expand_median'] = g.expanding(1).median().reset_index(level=0, drop=True)
-    df['expand_std'] = g.expanding(1).std().reset_index(level=0, drop=True)
-    ## TODO: add expand_mad
+    df['expand_std'] = g.expanding(5).std().reset_index(level=0, drop=True).fillna(0)
     df['expand_max'] = g.expanding(1).max().reset_index(level=0, drop=True)
-    df['expand_skew'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
+    df['expand_skew'] = g.expanding(1).skew().reset_index(level=0, drop=True)
     df['expand_kurt'] = g.expanding(1).kurt().reset_index(level=0, drop=True)
     # transform
     df['u_in_max'] = g.transform('max')
@@ -75,17 +67,17 @@ def add_features(df):
     df = df.merge(RC_u_in_mean.to_frame("RC_u_in_mean"), left_on=["R", "C", "step"], right_index=True)
     df["RC_u_in_median_diff"] = df["u_in"] - df["RC_u_in_median"]
     df["RC_u_in_mean_diff"] = df["u_in"] - df["RC_u_in_mean"]
-    df.drop(columns=["RC_u_in_median", "RC_u_in_mean"], inplace=True)
-
-    df.sort_values("id", inplace=True)
+    df["RC_u_in_median_diff_cum"] = df.groupby("breath_id")["RC_u_in_median_diff"].cumsum()
+    df["RC_u_in_mean_diff_cum"] = df.groupby("breath_id")["RC_u_in_mean_diff"].cumsum()
 
     # R C
     df['R'] = df['R'].astype(str)
     df['C'] = df['C'].astype(str)
+    df['R_C'] = df["R"] + '_' + df["C"]
     df = pd.get_dummies(df)
 
-
     df = df.fillna(0)
+    df.sort_values("id", inplace=True)
     return df
 
 

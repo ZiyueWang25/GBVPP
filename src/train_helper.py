@@ -10,7 +10,7 @@ from dataset import *
 from models import get_model
 from loss import get_loss
 from metric import cal_mae_metric
-from optimizer import get_optimizer
+from optim import get_optimizer
 
 
 def training_loop(train_df, config):
@@ -18,7 +18,7 @@ def training_loop(train_df, config):
     if config.use_wandb:
         wandb.login(key=get_key(config.wandb_key_path))
         wandb.init(project=config.wandb_project, name=config.model_version + config.wandb_post,
-                   config=class2dict(config), group=config.model_module, job_type=config.model_version)
+                   config=class2dict(config), group=config.wandb_group, job_type=config.model_version)
 
     folds_val_score = []
     for fold in range(5):
@@ -41,8 +41,10 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
     print('training data samples, val data samples: ', X_train.shape, X_valid.shape)
-    train_dt = VPP(X_train, y_train, w_train, config)
-    valid_dt = VPP(X_valid, y_valid, w_valid, config)
+    w_train_transform = transform_weight(w_train, config)
+    w_valid_transform = transform_weight(w_train, config)
+    train_dt = VPP(X_train, y_train, w_train_transform, config)
+    valid_dt = VPP(X_valid, y_valid, w_valid_transform, config)
 
     train_loader = DataLoader(train_dt,
                               batch_size=config.batch_size,
@@ -93,7 +95,6 @@ class Trainer:
         self.device = config.device
         self.optimizer = optimizer
         self.criterion = criterion
-        self.use_in_phase_only = config.use_in_phase_only
         self.scheduler = scheduler
         self.best_valid_score = best_valid_score
         self.y_valid = y_valid
@@ -110,6 +111,9 @@ class Trainer:
         self.swa_start_epoch = swa_start_epoch
         self.swa_start_step = swa_start_step
         self.step = 0  # for swa
+
+        # speed
+        self.use_auto_cast = config.use_auto_cast
 
         # log
         self.print_num_steps = config.print_num_steps
@@ -189,11 +193,15 @@ class Trainer:
             targets = batch[1].to(self.device)
             weights = batch[2].to(self.device)
 
-            with autocast(enabled=True):
+            with autocast(enabled=self.use_auto_cast):
                 outputs = self.model(X).squeeze()
                 # get rid of NaN
-                loss = self.criterion(targets[outputs == outputs], outputs[outputs == outputs],
-                                      weights[outputs == outputs], self.use_in_phase_only)
+                if self.do_reg:
+                    loss = self.criterion(targets[outputs == outputs], outputs[outputs == outputs],
+                                          weights[outputs == outputs])
+                else:
+                    loss = self.criterion(targets, outputs, weights)
+
             scaler.scale(loss).backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
@@ -225,7 +233,7 @@ class Trainer:
                 targets = batch[1].to(self.device)
                 weights = batch[2].to(self.device)
                 outputs = model(X).squeeze()
-                loss = self.criterion(targets, outputs, weights, self.use_in_phase_only)
+                loss = self.criterion(targets, outputs, weights)
                 valid_loss.append(loss.detach().item())
                 preds.append(outputs.to('cpu').detach().numpy())
         predictions = np.concatenate(preds, axis=0)
