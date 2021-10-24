@@ -50,6 +50,12 @@ class Model(nn.Module):
             if i > 0 else nn.LSTM(input_size, hidden[0], batch_first=True, bidirectional=use_bi)
             for i in range(len(config.hidden))
         ])
+        self.use_dp = len(config.gpu) > 1
+        self.use_bn_after_lstm = config.use_bn_after_lstm
+        if self.use_bn_after_lstm:
+            self.bns = nn.ModuleList([nn.BatchNorm1d(80) for i in range(len(config.hidden))])
+
+        # add batch normalization
         self.fc1 = nn.Linear(2 * hidden[-1], config.fc)
         self.act = act
         if self.do_reg:
@@ -84,8 +90,11 @@ class Model(nn.Module):
 
     def forward(self, x):
         for i in range(len(self.lstms)):
-            self.lstms[i].flatten_parameters()
+            if self.use_dp:
+                self.lstms[i].flatten_parameters()
             x, _ = self.lstms[i](x)
+            if self.use_bn_after_lstm:
+                x = self.bns[i](x)
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)

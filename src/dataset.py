@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from sklearn.preprocessing import RobustScaler
 
-from FE import add_features
+from FE import add_features_choice
 
 from pickle import dump, load
 
@@ -61,6 +61,10 @@ def read_data(config):
     }
     train = pd.read_csv(config.kaggle_data_folder + "/train.csv", nrows=n, dtype=dict_types)
     test = pd.read_csv(config.kaggle_data_folder + "/test.csv", nrows=n, dtype=dict_types)
+    if config.use_fake_pressure:
+        print("Use fake pressure")
+        test["pressure"] = pd.read_csv(config.fake_pressure_path)["pressure"]
+
     with open(config.input_folder + '/id_fold_dict.pickle', 'rb') as handle:
         id_fold_dict = pickle.load(handle)
     train['fold'] = train['breath_id'].apply(lambda x: id_fold_dict[x])
@@ -101,19 +105,23 @@ def prepare_train_valid(train_df, config, fold):
     return X_train, y_train, w_train, X_valid, y_valid, w_valid
 
 
-
 def prepare_test(test, config, fold):
     # test data should already have features
     feature_cols = [col for col in test.columns if col not in ["id", "breath_id", "fold", "pressure"]]
+    no_transform_cols = ['u_out', 'u_out_diff', "u_out_diff_back1", "u_out_diff_back2",
+                         'R_20', 'R_5', 'R_50', 'C_10', 'C_20', 'C_50',
+                         'R_C_20_10', 'R_C_20_20', 'R_C_20_50', 'R_C_50_10', 'R_C_50_20',
+                         'R_C_50_50', 'R_C_5_10', 'R_C_5_20', 'R_C_5_50']
+    transform_cols = [col for col in feature_cols if col not in no_transform_cols]
+    y_test = test['pressure'].values.reshape(-1, 80)
+    w_test = 1 - test['u_out'].values.reshape(-1, 80)
     if config.strict_scale:
         rs = load(open(config.model_output_folder + f'/scaler_{fold}.pkl', 'rb'))
     else:
         rs = load(open(config.model_output_folder + f'/scaler.pkl', 'rb'))
 
-    X_test = rs.transform(test[feature_cols])
-    X_test = X_test.reshape(-1, 80, len(feature_cols))
-    y_test = test['pressure'].values.reshape(-1, 80)
-    w_test = 1 - test['u_out'].values.reshape(-1, 80)
+    test[transform_cols] = rs.transform(test[transform_cols])
+    X_test = test[feature_cols].values.reshape(-1, 80, len(feature_cols))
     return X_test, y_test, w_test
 
 
@@ -138,7 +146,7 @@ def generate_PL(fold, train_df, config):
         print("Rounding....")
         PL_df["pressure"] = PL_df["pressure"].map(lambda x: pressure_unique[np.abs(pressure_unique-x).argmin()])
     PL_df['fold'] = -1
-    PL_df = add_features(PL_df)
+    PL_df = add_features_choice(PL_df, config)
     PL_df = PL_df[train_df.columns]
     PL_df = pd.concat([train_df, PL_df]).reset_index(drop=True)
     PL_df.reset_index(inplace=True, drop=True)

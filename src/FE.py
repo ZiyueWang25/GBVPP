@@ -3,25 +3,28 @@ import pandas as pd
 
 def add_features_choice(df, config):
     if config.fe_type == "own":
-        return add_features(df)
+        return add_features(df, config)
     elif config.fe_type == "fork":
-        return add_features_fork(df)
+        return add_features_fork(df, config)
 
 
-def add_features(df):
+def add_features(df, config):
     df["step"] = list(range(80)) * (df.shape[0] // 80)
 
     # u_out
+    print("--- Generate u_out features ---")
     df['u_out_diff'] = df.groupby("breath_id")['u_out'].diff().fillna(0)
     for shift in range(1, 3):
         df[f'u_out_diff_back{shift}'] = df.groupby('breath_id')['u_out_diff'].shift(-shift)
     df.fillna(0, inplace=True)
 
     # time
+    print("--- Generate time features ---")
     df['cross_time'] = df['time_step'] * (1 - df['u_out'])
     df['time_delta'] = df.groupby("breath_id")['time_step'].diff().fillna(0.033098770961621796)
 
     # u_in
+    print("--- Generate u_in features ---")
     g = df.groupby('breath_id')['u_in']
     df['cross_u_in'] = df['u_in'] * (1 - df['u_out'])
     # u_in: first point, last point
@@ -60,20 +63,37 @@ def add_features(df):
     df['u_in_diffmax'] = df['u_in_max'] - df['u_in']
     df['u_in_diffmean'] = df['u_in_mean'] - df['u_in']
 
-    # Cross Sectional
-    RC_u_in_median = df.groupby(["R", "C", "step"])["u_in"].median()
-    RC_u_in_mean = df.groupby(["R", "C", "step"])["u_in"].mean()
-    df = df.merge(RC_u_in_median.to_frame("RC_u_in_median"), left_on=["R", "C", "step"], right_index=True)
-    df = df.merge(RC_u_in_mean.to_frame("RC_u_in_mean"), left_on=["R", "C", "step"], right_index=True)
-    df["RC_u_in_median_diff"] = df["u_in"] - df["RC_u_in_median"]
-    df["RC_u_in_mean_diff"] = df["u_in"] - df["RC_u_in_mean"]
-    df["RC_u_in_median_diff_cum"] = df.groupby("breath_id")["RC_u_in_median_diff"].cumsum()
-    df["RC_u_in_mean_diff_cum"] = df.groupby("breath_id")["RC_u_in_mean_diff"].cumsum()
+    if config.use_crossSectional_features:
+        # Cross Sectional
+        print("--- Generate cross sectional features ---")
+        RC_u_in_median = df.groupby(["R", "C", "step"])["u_in"].median()
+        RC_u_in_mean = df.groupby(["R", "C", "step"])["u_in"].mean()
+        df = df.merge(RC_u_in_median.to_frame("RC_u_in_median"), left_on=["R", "C", "step"], right_index=True)
+        df = df.merge(RC_u_in_mean.to_frame("RC_u_in_mean"), left_on=["R", "C", "step"], right_index=True)
+        df["RC_u_in_median_diff"] = df["u_in"] - df["RC_u_in_median"]
+        df["RC_u_in_mean_diff"] = df["u_in"] - df["RC_u_in_mean"]
+        df["RC_u_in_median_diff_cum"] = df.groupby("breath_id")["RC_u_in_median_diff"].cumsum()
+        df["RC_u_in_mean_diff_cum"] = df.groupby("breath_id")["RC_u_in_mean_diff"].cumsum()
+
+    # fake pressure
+    if config.use_fake_pressure:
+        print("--- Generate fake pressure features ---")
+        g = df.groupby("breath_id")["pressure"]
+        for i in range(1, 4):
+            df[f"pressure_prev_lag{i}"] = g.shift(i)
+            df[f"pressure_prev_lag_back{i}"] = g.shift(-i)
+        for i in range(1, 3):
+            df[f"pressure_prev_lag{i}_minus_lag{i+1}"] = df[f"pressure_prev_lag{i}"] - df[f"pressure_prev_lag{i+1}"]
+            df[f"pressure_prev_lag_back{i+1}_minus_lag_back{i}"] = df[f"pressure_prev_lag_back{i+1}"] - df[f"pressure_prev_lag_back{i}"]
+    # rate
+    df['u_in_rate'] = df['u_in_diff1'] / df['time_delta']
 
     # R C
+    print("--- Generate R C features ---")
     df['R'] = df['R'].astype(str)
     df['C'] = df['C'].astype(str)
-    df['R_C'] = df["R"] + '_' + df["C"]
+    if config.use_RC_together:
+        df['R_C'] = df["R"] + '_' + df["C"]
     df = pd.get_dummies(df)
 
     df = df.fillna(0)
@@ -81,7 +101,7 @@ def add_features(df):
     return df
 
 
-def add_features_fork(df):
+def add_features_fork(df,config):
     df['area'] = df['time_step'] * df['u_in']
     df['area'] = df.groupby('breath_id')['area'].cumsum()
     df['u_in_cumsum'] = (df['u_in']).groupby(df['breath_id']).cumsum()

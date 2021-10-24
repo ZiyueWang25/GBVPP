@@ -41,12 +41,23 @@
 
 
 # 1023
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_base_hb025 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do0 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do01 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do01_CLS --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_base_hb025 --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do0 --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do01 --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_CH_do01_CLS --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_base_hb025 --train_folds 1 2 3 4 --debug 0 --gpu 1
+
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_combined_good --train_folds 0 --debug 0 --gpu 1
+#CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config New_combined_good --train_folds 1 2 3 4 --debug 0 --gpu 1
 
 
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM4_base_epoch300_ROP_bn --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_no_strict_scale --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config Base --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_IP_only --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_OP01 --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_hb025 --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config ch_cls_do025 --train_folds 0 --debug 0 --gpu 1
 
 
 

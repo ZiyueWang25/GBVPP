@@ -153,7 +153,7 @@ class Trainer:
                   '--- use {:.3f}s'.format(train_loss, valid_loss, valid_score, self.best_valid_score, lr,
                                            time.time() - start_time))
             if self.use_wandb:
-                wandb.log({f"[fold{self.fold}] epoch": n_epoch + 1,
+                wandb.log({f"fold epoch": n_epoch + 1,
                            f"[fold{self.fold}] avg_train_loss": train_loss,
                            f"[fold{self.fold}] avg_val_loss": valid_loss,
                            f"[fold{self.fold}] val_score": valid_score,

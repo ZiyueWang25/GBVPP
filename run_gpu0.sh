@@ -31,8 +31,24 @@
 # CUDA_AVAILABLE_DEVICES=0,1 python3 train.py --model_config Fork2 --train_folds 0 --debug 0 --gpu 0 1
 
 # 1023
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base --train_folds 0 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_InPhaseOnly --train_folds 0 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_OutPhase01 --train_folds 0 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_noUnitVar --train_folds 0 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base --train_folds 0 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_InPhaseOnly --train_folds 0 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_OutPhase01 --train_folds 0 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_noUnitVar --train_folds 0 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base --train_folds 1 2 3 4 --debug 0 --gpu 0
 
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config New_base_fake --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config New_base_fake --train_folds 0 --debug 0 --gpu 0
+
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_fake --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_fake --train_folds 0 --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_hb05 --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_hb01 --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_fc128 --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_UnitVar --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_cls --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config ch_cls_do01 --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_fake --train_folds 1 2 3 4 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_fake --train_folds 0 1 2 3 4 --debug 0 --gpu 0

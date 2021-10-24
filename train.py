@@ -17,7 +17,7 @@ if __name__ == "__main__":
         print("Training with ", arg.model_config, " Configuration")
         train, _ = read_data(config)
         print("Read Data: ", train.shape)
-        train = add_features_choice(train, config)
+        train = add_features_choice(train.copy(), config)
         print("Build Features: ", train.shape)
         seed_torch(seed=config.seed)
         training_loop(train.copy(), config)
