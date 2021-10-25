@@ -10,6 +10,7 @@ from datetime import datetime
 ## 4. Feature Importance Analysis
 ## 5. Error Analysis
 ## 6. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996
+    # check the prediction under diff R & C
 ## 7. KNN features
 
 
@@ -41,7 +42,6 @@ class Base:
 
     # features
     use_fake_pressure = False
-
     use_crossSectional_features = True
     use_RC_together = False
 
@@ -90,6 +90,14 @@ class Base:
 
 class base_no_strict_scale(Base):
     strict_scale = False
+
+class base_fork(Base):
+    # https://www.kaggle.com/dienhoa/ventillator-fastai-lb-0-169-no-kfolds-no-blend
+    strict_scale = False
+    hidden = [512, 256, 128, 128]
+    fc = 128
+    lr = 2e-3
+
 
 
 class LSTM4_base_epoch300_ROP_bn(Base):
@@ -142,6 +150,23 @@ class ch_cls_do025(ch_cls_do01):
 class base_fake(Base):
     use_fake_pressure = True
 
+
+class base_better(Base):
+    wandb_group = "betterConfig"
+    use_bn_after_lstm = True
+    use_RC_together = True
+    loss_fnc = "huber"
+    delta = 0.1
+    fc = 64
+
+class PulpFiction(base_better):
+    model_module = "PulpFiction"
+    hidden = [768, 512, 384, 256, 128]
+    hidden_gru = [384, 256, 128, 64]
+    fc = 128
+    factor = 0.85
+    patience = 7
+    es = 21
 
 
 def update_config(config):

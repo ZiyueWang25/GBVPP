@@ -172,7 +172,7 @@ class Trainer:
             if self.use_wandb:
                 wandb.log({f"[fold{self.fold}] avg_val_loss_swa": valid_loss_swa,
                            f"[fold{self.fold}] val_score_swa": valid_score_swa})
-                # update batch normalization
+            # update batch normalization
             save_dict = {
                 "swa_model_state_dict": self.swa_model.state_dict(),
                 "swa_scheduler": self.swa_scheduler.state_dict(),
@@ -203,6 +203,7 @@ class Trainer:
                     loss = self.criterion(targets, outputs, weights)
 
             scaler.scale(loss).backward()
+            scaler.unscale_(self.optimizer)
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             scaler.step(self.optimizer)
             scaler.update()

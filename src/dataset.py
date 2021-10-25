@@ -3,10 +3,8 @@ import pickle
 import torch
 import numpy as np
 from sklearn.preprocessing import RobustScaler
-
-from FE import add_features_choice
-
 from pickle import dump, load
+from FE import add_features_choice
 
 
 class VPP(torch.utils.data.Dataset):
@@ -74,21 +72,22 @@ def read_data(config):
 def prepare_train_valid(train_df, config, fold):
     train_index, valid_index = train_df.query(f"fold!={fold}").index, train_df.query(f"fold=={fold}").index
     rs = RobustScaler(quantile_range=(config.low_q, config.high_q), unit_variance=config.unit_var)
-    train, valid = train_df.iloc[train_index], train_df.iloc[valid_index]
+    train, valid = train_df.loc[train_index], train_df.loc[valid_index]
     y_train = train['pressure'].values.reshape(-1, 80)
     w_train = 1 - train['u_out'].values.reshape(-1, 80)
     y_valid = valid['pressure'].values.reshape(-1, 80)
     w_valid = 1 - valid['u_out'].values.reshape(-1, 80)
+
     feature_cols = [col for col in train.columns if col not in ["id", "breath_id", "fold", "pressure"]]
     no_transform_cols = ['u_out', 'u_out_diff', "u_out_diff_back1", "u_out_diff_back2",
                          'R_20', 'R_5', 'R_50', 'C_10', 'C_20', 'C_50',
                          'R_C_20_10', 'R_C_20_20', 'R_C_20_50', 'R_C_50_10', 'R_C_50_20',
                          'R_C_50_50', 'R_C_5_10', 'R_C_5_20', 'R_C_5_50']
     transform_cols = [col for col in feature_cols if col not in no_transform_cols]
+    print("Prepare train valid")
+    print(train_df.shape)
     if config.strict_scale:
         print("Use scale to fit train and scale valid")
-        print("Prepare train valid")
-        print(train.shape, valid.shape)
         train[transform_cols] = rs.fit_transform(train[transform_cols])
         valid[transform_cols] = rs.transform(valid[transform_cols])
         X_train = train[feature_cols].values
@@ -97,7 +96,8 @@ def prepare_train_valid(train_df, config, fold):
     else:
         print("Unsctrict scale - leakage..")
         train_df[transform_cols] = rs.fit_transform(train_df[transform_cols])
-        X_train, X_valid = train_df[train_index, feature_cols], train_df[valid_index, feature_cols]
+        X_train = train_df.loc[train_index, feature_cols].values
+        X_valid = train_df.loc[valid_index, feature_cols].values
         dump(rs, open(config.model_output_folder + f'/scaler.pkl', 'wb'))
 
     X_train = X_train.reshape(-1, 80, len(feature_cols))

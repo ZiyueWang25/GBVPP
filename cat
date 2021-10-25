@@ -1,0 +1,16 @@
+[I 17:15:58.161 NotebookApp] [jupyter_nbextensions_configurator] enabled 0.4.1
+[I 17:15:58.161 NotebookApp] Serving notebooks from local directory: /home/vincent/Kaggle/GBVPP
+[I 17:15:58.162 NotebookApp] Jupyter Notebook 6.4.4 is running at:
+[I 17:15:58.162 NotebookApp] http://localhost:2526/?token=c0e097ea0005ca4c55ab1dcda764a0fa4f45a4a49dfe57f5
+[I 17:15:58.162 NotebookApp]  or http://127.0.0.1:2526/?token=c0e097ea0005ca4c55ab1dcda764a0fa4f45a4a49dfe57f5
+[I 17:15:58.162 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 17:15:58.163 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/vincent/.local/share/jupyter/runtime/nbserver-978955-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:2526/?token=c0e097ea0005ca4c55ab1dcda764a0fa4f45a4a49dfe57f5
+     or http://127.0.0.1:2526/?token=c0e097ea0005ca4c55ab1dcda764a0fa4f45a4a49dfe57f5
+[I 17:16:01.902 NotebookApp] Interrupted...
+[I 17:16:01.902 NotebookApp] Shutting down 0 kernels
+[I 17:16:01.903 NotebookApp] Shutting down 0 terminals

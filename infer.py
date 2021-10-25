@@ -1,5 +1,6 @@
 import sys
 sys.path.append("./src/")
+import gc
 
 from util import *
 from FE import add_features_choice
@@ -15,8 +16,9 @@ if __name__ == "__main__":
         print("Training with ", arg.model_config, " Configuration")
         print("Get CV Score")
         cv = get_cv_score(config)
-        _, test = read_data(config)
-
+        train, test = read_data(config)
+        del train
+        gc.collect()
         print("Read Data: ", test.shape)
         test = add_features_choice(test.copy(), config)
         print("Build Features: ", test.shape)
