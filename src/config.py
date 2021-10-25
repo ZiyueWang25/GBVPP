@@ -159,6 +159,23 @@ class base_better(Base):
     delta = 0.1
     fc = 64
 
+class base_better_OP01(base_better):
+    wandb_group = "betterConfig_OP01"
+    out_phase_weight = 0.1
+
+class base_better_OP01_noRCTogether(base_better_OP01):
+    use_RC_together = False
+
+class base_better_OP01_lossMAE(base_better_OP01):
+    loss_fnc = "mae"
+
+class base_better_OP01_WarmUp(base_better_OP01):
+    scheduler = "cosineWithWarmUp"
+    warmup = 20
+    epochs = 200
+
+
+
 class PulpFiction(base_better):
     model_module = "PulpFiction"
     hidden = [768, 512, 384, 256, 128]
