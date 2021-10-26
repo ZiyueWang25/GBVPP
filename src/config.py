@@ -58,6 +58,7 @@ class Base:
 
     # Model - transformer
     d_model = 256
+    n_head = 8
     do_transformer = 0.1
     dim_forward = 1024
     num_layers = 2
