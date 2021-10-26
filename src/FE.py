@@ -67,7 +67,7 @@ def add_features(df, config):
         # Cross Sectional
         print("--- Generate cross sectional features ---")
         RC_u_in_median = pd.read_csv(config.RC_u_in_median_path).set_index(["R", "C", "step"])
-        RC_u_in_mean = pd.read_csv(config.RC_u_in_median_path).set_index(["R", "C", "step"])
+        RC_u_in_mean = pd.read_csv(config.RC_u_in_mean_path).set_index(["R", "C", "step"])
         df = df.merge(RC_u_in_median, left_on=["R", "C", "step"], right_index=True)
         df = df.merge(RC_u_in_mean, left_on=["R", "C", "step"], right_index=True)
         df["RC_u_in_median_diff"] = df["u_in"] - df["RC_u_in_median"]
