@@ -4,14 +4,13 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 ## TODO:
-## 1. transformer based model
-## 2. TabNet
-## 3. add SWA
-## 4. Feature Importance Analysis *
-## 5. Error Analysis
-## 6. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996
+## 1. transformer based model *
+## 2. add SWA
+## 3. Feature Importance Analysis *
+## 4. Error Analysis
+## 5. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996
     # check the prediction under diff R & C
-## 7. KNN features
+## 6. KNN features
 
 
 class Base:
@@ -220,6 +219,12 @@ class base_transformer_bigger(base_transformer):
     dim_forward = 2048
     do_prob = 0.2
 
+class base_transformer_do03(base_transformer):
+    do_prob = 0.3
+
+class base_transformer_do03_DM512(base_transformer):
+    do_prob = 0.3
+    d_model = 512
 
 
 def update_config(config):
