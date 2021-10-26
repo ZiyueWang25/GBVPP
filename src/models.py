@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
+import math
 
 
 def get_model(input_size, config):
@@ -10,6 +11,9 @@ def get_model(input_size, config):
         return Model_CH(input_size, config)
     elif config.model_module == "PulpFiction":
         return Model_PulpFiction(input_size, config)
+    elif config.model_module == "transformer":
+        return Model_transformer(input_size, config)
+
 
 
 class my_round_func(torch.autograd.Function):
@@ -235,6 +239,28 @@ class Model_PulpFiction(nn.Module):
         return x
 
 
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        """
+        Args:
+            x: Tensor, shape [seq_len, batch_size, embedding_dim]
+        """
+        x = x + self.pe[:x.size(0)]
+        return self.dropout(x)
+
+
 class Model_transformer(nn.Module):
     def __init__(self, input_size, config):
         super().__init__()
@@ -242,9 +268,21 @@ class Model_transformer(nn.Module):
         hidden = config.hidden
         use_bi = config.bidirectional
         self.do_reg = config.do_reg
+        self.seq_emb = nn.Sequential(
+            nn.Linear(input_size, config.d_model),
+            nn.LayerNorm(config.d_model),
+            act,
+            config.do_transformer,
+        )
+        self.pos_encoder = PositionalEncoding(d_model=config.d_model, dropout=config.do_transformer)
+        encoder_layers = nn.TransformerEncoderLayer(d_model=config.d_model, nhead=config.n_head,
+                                                    dim_feedforward=config.dim_forward,
+                                                    dropout=config.do_transformer, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=config.num_layers)
+
         self.lstms = nn.ModuleList([
             nn.LSTM((1+use_bi) * hidden[i-1], hidden[i], batch_first=True, bidirectional=use_bi)
-            if i > 0 else nn.LSTM(input_size, hidden[0], batch_first=True, bidirectional=use_bi)
+            if i > 0 else nn.LSTM(config.d_models, hidden[0], batch_first=True, bidirectional=use_bi)
             for i in range(len(config.hidden))
         ])
         self.use_dp = len(config.gpu) > 1
@@ -279,6 +317,10 @@ class Model_transformer(nn.Module):
                     p.data.fill_(0)
 
     def forward(self, x):
+        x = self.seq_emb(x)
+        x = self.pos_encoder(x)
+        x = self.transformer_encoder(x)
+
         for i in range(len(self.lstms)):
             if self.use_dp:
                 self.lstms[i].flatten_parameters()

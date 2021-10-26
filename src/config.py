@@ -7,7 +7,7 @@ from datetime import datetime
 ## 1. transformer based model
 ## 2. TabNet
 ## 3. add SWA
-## 4. Feature Importance Analysis
+## 4. Feature Importance Analysis *
 ## 5. Error Analysis
 ## 6. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996
     # check the prediction under diff R & C
@@ -28,7 +28,7 @@ class Base:
     # general
     debug = False
     model_version = "base_version"
-    model_module = "BASE"
+    model_module = "BASE" # "CH", "PulpFiction", "transformer"
     PL_folder = None
     seed = 48
     ckpt_folder = None
@@ -48,7 +48,7 @@ class Base:
     use_RC_together = False
     drop_useless_cols = False
 
-    # LSTM
+    # Model - LSTM
     hidden = [512, 256, 128, 64]
     bidirectional = True
     nh = 256
@@ -56,6 +56,11 @@ class Base:
     fc = 50
     use_bn_after_lstm = False
 
+    # Model - transformer
+    d_model = 256
+    do_transformer = 0.1
+    dim_forward = 1024
+    num_layers = 2
 
     # training
     do_reg = True
@@ -191,6 +196,13 @@ class PulpFiction(base_better):
     factor = 0.85
     patience = 7
     es = 21
+
+
+class base_transformer(base_better2):
+    model_module = "transformer"
+    fc = 64
+    hidden = [256, 128]
+
 
 
 def update_config(config):
