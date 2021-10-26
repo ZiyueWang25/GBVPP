@@ -272,7 +272,7 @@ class Model_transformer(nn.Module):
             nn.Linear(input_size, config.d_model),
             nn.LayerNorm(config.d_model),
             act,
-            config.do_transformer,
+            nn.Dropout(config.do_transformer),
         )
         self.pos_encoder = PositionalEncoding(d_model=config.d_model, dropout=config.do_transformer)
         encoder_layers = nn.TransformerEncoderLayer(d_model=config.d_model, nhead=config.n_head,
