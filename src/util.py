@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, CosineAnnealingLR, ReduceLROnPlateau, CyclicLR
 from transformers import get_cosine_schedule_with_warmup
+import pickle
 
 
 def seed_torch(seed=42):
@@ -83,3 +84,11 @@ def get_device(config):
     print('Using device:', device)
     print('Number of device:', torch.cuda.device_count())
     return device
+
+
+def save_pickle(obj, folder_path):
+    pickle.dump(obj, open(folder_path, 'wb'), pickle.HIGHEST_PROTOCOL)
+
+
+def load_pickle(folder_path):
+    return pickle.load(open(folder_path, 'rb'))

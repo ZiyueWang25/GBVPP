@@ -233,3 +233,61 @@ class Model_PulpFiction(nn.Module):
         if self.do_reg:
             x = self.scaler(x)
         return x
+
+
+class Model_transformer(nn.Module):
+    def __init__(self, input_size, config):
+        super().__init__()
+        act = nn.SELU(inplace=False)
+        hidden = config.hidden
+        use_bi = config.bidirectional
+        self.do_reg = config.do_reg
+        self.lstms = nn.ModuleList([
+            nn.LSTM((1+use_bi) * hidden[i-1], hidden[i], batch_first=True, bidirectional=use_bi)
+            if i > 0 else nn.LSTM(input_size, hidden[0], batch_first=True, bidirectional=use_bi)
+            for i in range(len(config.hidden))
+        ])
+        self.use_dp = len(config.gpu) > 1
+        self.use_bn_after_lstm = config.use_bn_after_lstm
+        if self.use_bn_after_lstm:
+            self.bns = nn.ModuleList([nn.BatchNorm1d(80) for i in range(len(config.hidden))])
+
+        # add batch normalization
+        self.fc1 = nn.Linear(2 * hidden[-1], config.fc)
+        self.act = act
+        if self.do_reg:
+            self.fc2 = nn.Linear(config.fc, 1)
+            self.scaler = ScaleLayer(config)
+        else:
+            self.fc2 = nn.Linear(config.fc, 950)
+        self._reinitialize()
+
+    def _reinitialize(self):
+        """
+        Tensorflow/Keras-like initialization
+        """
+        for name, p in self.named_parameters():
+            if 'lstm' in name:
+                if 'weight_ih' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'weight_hh' in name:
+                    nn.init.orthogonal_(p.data)
+            elif 'fc' in name:
+                if 'weight' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'bias' in name:
+                    p.data.fill_(0)
+
+    def forward(self, x):
+        for i in range(len(self.lstms)):
+            if self.use_dp:
+                self.lstms[i].flatten_parameters()
+            x, _ = self.lstms[i](x)
+            if self.use_bn_after_lstm:
+                x = self.bns[i](x)
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.fc2(x)
+        if self.do_reg:
+            x = self.scaler(x)
+        return x

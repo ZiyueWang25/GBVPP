@@ -66,14 +66,17 @@ def add_features(df, config):
     if config.use_crossSectional_features:
         # Cross Sectional
         print("--- Generate cross sectional features ---")
-        RC_u_in_median = df.groupby(["R", "C", "step"])["u_in"].median()
-        RC_u_in_mean = df.groupby(["R", "C", "step"])["u_in"].mean()
-        df = df.merge(RC_u_in_median.to_frame("RC_u_in_median"), left_on=["R", "C", "step"], right_index=True)
-        df = df.merge(RC_u_in_mean.to_frame("RC_u_in_mean"), left_on=["R", "C", "step"], right_index=True)
+        RC_u_in_median = pd.read_csv(config.RC_u_in_median_path).set_index(["R", "C", "step"])
+        RC_u_in_mean = pd.read_csv(config.RC_u_in_median_path).set_index(["R", "C", "step"])
+        df = df.merge(RC_u_in_median, left_on=["R", "C", "step"], right_index=True)
+        df = df.merge(RC_u_in_mean, left_on=["R", "C", "step"], right_index=True)
         df["RC_u_in_median_diff"] = df["u_in"] - df["RC_u_in_median"]
         df["RC_u_in_mean_diff"] = df["u_in"] - df["RC_u_in_mean"]
         df["RC_u_in_median_diff_cum"] = df.groupby("breath_id")["RC_u_in_median_diff"].cumsum()
         df["RC_u_in_mean_diff_cum"] = df.groupby("breath_id")["RC_u_in_mean_diff"].cumsum()
+        for lag in range(1, 3):
+            df[f'RC_u_in_median_diff_shift{lag}'] = df.groupby("breath_id")['RC_u_in_median_diff'].shift(lag)
+            df[f'RC_u_in_median_diff_shift_back{lag}'] = df.groupby("breath_id")['RC_u_in_median_diff'].shift(-lag)
 
     # fake pressure
     if config.use_fake_pressure:
@@ -95,6 +98,11 @@ def add_features(df, config):
     if config.use_RC_together:
         df['R_C'] = df["R"] + '_' + df["C"]
     df = pd.get_dummies(df)
+
+    if config.drop_useless_cols:
+        drop_cols = ["step", "cross_time", "expand_skew", "expand_kurt"]
+        print("Drop Low Importance Columns:", drop_cols)
+        df.drop(columns=drop_cols, inplace=True)
 
     df = df.fillna(0)
     df.sort_values("id", inplace=True)

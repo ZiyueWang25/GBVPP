@@ -22,6 +22,8 @@ class Base:
     wandb_key_path = "/home/vincent/Kaggle/GBVPP/input/key.txt"
     pressure_unique_path = "/home/vincent/Kaggle/GBVPP/input/pressure_unique.npy"
     fake_pressure_path = "/home/vincent/Kaggle/GBVPP/input/fake_pressure_1368.csv"
+    RC_u_in_median_path = "/home/vincent/Kaggle/GBVPP/input/RC_u_in_median.csv"
+    RC_u_in_mean_path = "/home/vincent/Kaggle/GBVPP/input/RC_u_in_mean.csv"
 
     # general
     debug = False
@@ -44,6 +46,7 @@ class Base:
     use_fake_pressure = False
     use_crossSectional_features = True
     use_RC_together = False
+    drop_useless_cols = False
 
     # LSTM
     hidden = [512, 256, 128, 64]
@@ -173,6 +176,10 @@ class base_better_OP01_WarmUp(base_better_OP01):
     scheduler = "cosineWithWarmUp"
     warmup = 20
     epochs = 200
+
+class base_better2(base_better_OP01_lossMAE):
+    wandb_group = "betterConfig_FE_dropCol"
+    drop_useless_cols = True
 
 
 

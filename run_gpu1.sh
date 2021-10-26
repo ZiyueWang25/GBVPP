@@ -64,7 +64,8 @@
 #CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_better --train_folds 3 4 --debug 0 --gpu 1
 #CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_better_PL --train_folds 0 1 2 --debug 0 --gpu 1
 
-CUDA_AVAILABLE_DEVICES=0,1 python3 train.py --model_config base_better_OP01_lossMAE --train_folds 0 --debug 0 --gpu 0 1
+# CUDA_AVAILABLE_DEVICES=0,1 python3 train.py --model_config base_better_OP01_lossMAE --train_folds 0 --debug 0 --gpu 0 1
 #CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config base_better_OP01_lossMAE --train_folds 0 1 2 --debug 0 --gpu 1
 #CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_better_OP01_WarmUp --train_folds 0 1 2 --debug 0 --gpu 1
 #CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config base_better_OP01_WarmUp --train_folds 0 1 2 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=0,1 python3 train.py --model_config base_better2 --train_folds 0 --debug 0 --gpu 0 1
