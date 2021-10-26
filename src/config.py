@@ -205,6 +205,22 @@ class base_transformer(base_better2):
     hidden = [256, 128]
 
 
+class base_transformer_DM512(base_transformer):
+    d_model = 512
+
+class base_transformer_Layer3(base_transformer):
+    num_layers = 3
+
+class base_transformer_do02(base_transformer):
+    do_prob = 0.2
+
+class base_transformer_bigger(base_transformer):
+    d_model = 512
+    num_layers = 3
+    dim_forward = 2048
+    do_prob = 0.2
+
+
 
 def update_config(config):
     config.model_output_folder = config.output_folder + config.model_version + "/"
