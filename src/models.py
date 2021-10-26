@@ -282,7 +282,7 @@ class Model_transformer(nn.Module):
 
         self.lstms = nn.ModuleList([
             nn.LSTM((1+use_bi) * hidden[i-1], hidden[i], batch_first=True, bidirectional=use_bi)
-            if i > 0 else nn.LSTM(config.d_models, hidden[0], batch_first=True, bidirectional=use_bi)
+            if i > 0 else nn.LSTM(config.d_model, hidden[0], batch_first=True, bidirectional=use_bi)
             for i in range(len(config.hidden))
         ])
         self.use_dp = len(config.gpu) > 1
