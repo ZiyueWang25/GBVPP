@@ -42,7 +42,7 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
 
     print('training data samples, val data samples: ', X_train.shape, X_valid.shape)
     w_train_transform = transform_weight(w_train, config)
-    w_valid_transform = transform_weight(w_train, config)
+    w_valid_transform = transform_weight(w_valid, config)
     train_dt = VPP(X_train, y_train, w_train_transform, config)
     valid_dt = VPP(X_valid, y_valid, w_valid_transform, config)
 

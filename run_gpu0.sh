@@ -61,7 +61,7 @@
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_better_OP01 --train_folds 0 1 2 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better_OP01 --train_folds 0 1 2 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_better_OP01_noRCTogether --train_folds 0 1 2 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better_OP01_noRCTogether --train_folds 0 1 2 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_better_OP01 --train_folds 0 1 2 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better_OP01 --train_folds 0 1 2 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_better_OP01_noRCTogether --train_folds 0 1 2 --debug 0 --gpu 0
+#CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config base_better_OP01_noRCTogether --train_folds 0 1 2 --debug 0 --gpu 0
