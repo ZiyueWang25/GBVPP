@@ -72,5 +72,15 @@
 # kaggle competitions submit -f ./output/base_transformer_bigger/ -m "base_transformer_bigger"
 #CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config base_transformer_do03 --train_folds 0  --debug 0 --gpu 0
 
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM4_base_epoch300_ROP_bn_2 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM4_base_epoch300_ROP_bn_2 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM4_base_epoch300_ROP_bn_2 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM4_base_epoch300_ROP_bn_2 --train_folds 0  --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01 --train_folds 0  --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_fc128 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_fc128 --train_folds 0  --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_huber025 --train_folds 0  --debug 0 --gpu 0
+

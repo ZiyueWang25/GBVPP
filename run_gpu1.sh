@@ -77,6 +77,12 @@
 #CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_transformer_bigger --train_folds 3 4  --debug 0 --gpu 1
 
 #CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config base_transformer_do03_DM512 --train_folds 0  --debug 0 --gpu 1
+# best
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM4_base_epoch300_ROP_bn_LSTM5 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM4_base_epoch300_ROP_bn_LSTM5 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
 
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM4_base_epoch300_ROP_bn_LSTM5 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM4_base_epoch300_ROP_bn_LSTM5 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM6_OP01 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM6_OP01 --train_folds 0  --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM7_OP01 --train_folds 0  --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM7_OP01 --train_folds 0  --debug 0 --gpu 0

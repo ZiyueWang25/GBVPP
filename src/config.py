@@ -107,7 +107,6 @@ class base_fork(Base):
     lr = 2e-3
 
 
-
 class LSTM4_base_epoch300_ROP_bn(Base):
     wandb_group = "MakePytorchMatch"
     add_bn_after_lstm = True
@@ -121,52 +120,23 @@ class LSTM4_base_epoch300_ROP_bn_2(Base):
 class LSTM4_base_epoch300_ROP_bn_LSTM5(LSTM4_base_epoch300_ROP_bn_2):
     hidden = [256] * 5
 
-
-
-class base_IP_only(Base):
-    use_in_phase_only = True
-
-
-class base_OP01(Base):
+class LSTM5_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
     out_phase_weight = 0.1
 
-class base_hb025(Base):
+class LSTM5_OP01_fc128(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    out_phase_weight = 0.1
+    fc = 128
+
+class LSTM5_OP01_huber025(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    out_phase_weight = 0.1
     loss_fnc = "huber"
     delta = 0.25
 
+class LSTM6_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    hidden = [256] * 6
 
-class base_hb05(base_hb025):
-    delta = 0.5
-
-
-class base_hb01(base_hb025):
-    delta = 0.1
-
-
-class base_fc128(Base):
-    fc = 128
-
-class base_UnitVar(Base):
-    unit_var = True
-
-class base_cls(Base):
-    model_version = "Base_Cls"
-    do_reg = False
-    fc = 128
-    loss_fnc = "ce"
-
-
-class ch_cls_do01(base_cls):
-    model_module = "CH"
-    do = 0.1
-
-
-class ch_cls_do025(ch_cls_do01):
-    do = 0.25
-
-
-class base_fake(Base):
-    use_fake_pressure = True
+class LSTM7_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    hidden = [256 - i * 16  for i in range(7)]
 
 
 class base_better(Base):
@@ -177,26 +147,6 @@ class base_better(Base):
     delta = 0.1
     fc = 64
 
-class base_better_OP01(base_better):
-    wandb_group = "betterConfig_OP01"
-    out_phase_weight = 0.1
-
-class base_better_OP01_noRCTogether(base_better_OP01):
-    use_RC_together = False
-
-class base_better_OP01_lossMAE(base_better_OP01):
-    loss_fnc = "mae"
-
-class base_better_OP01_WarmUp(base_better_OP01):
-    scheduler = "cosineWithWarmUp"
-    warmup = 20
-    epochs = 200
-
-class base_better2(base_better_OP01_lossMAE):
-    wandb_group = "betterConfig_FE_dropCol"
-    drop_useless_cols = True
-
-
 
 class PulpFiction(base_better):
     model_module = "PulpFiction"
@@ -206,35 +156,6 @@ class PulpFiction(base_better):
     factor = 0.85
     patience = 7
     es = 21
-
-
-class base_transformer(base_better2):
-    model_module = "transformer"
-    fc = 64
-    hidden = [256, 128]
-
-
-class base_transformer_DM512(base_transformer):
-    d_model = 512
-
-class base_transformer_Layer3(base_transformer):
-    num_layers = 3
-
-class base_transformer_do02(base_transformer):
-    do_prob = 0.2
-
-class base_transformer_bigger(base_transformer):
-    d_model = 512
-    num_layers = 3
-    dim_forward = 2048
-    do_prob = 0.2
-
-class base_transformer_do03(base_transformer):
-    do_prob = 0.3
-
-class base_transformer_do03_DM512(base_transformer):
-    do_prob = 0.3
-    d_model = 512
 
 
 def update_config(config):
