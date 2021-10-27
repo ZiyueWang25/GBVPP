@@ -132,11 +132,14 @@ class LSTM5_OP01_huber025(LSTM4_base_epoch300_ROP_bn_LSTM5):
     loss_fnc = "huber"
     delta = 0.25
 
-class LSTM6_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
+class LSTM6(LSTM4_base_epoch300_ROP_bn_LSTM5):
     hidden = [256] * 6
 
-class LSTM7_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    hidden = [256 - i * 16  for i in range(7)]
+class LSTM7(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    hidden = [256] * 7
+
+class LSTM8(LSTM4_base_epoch300_ROP_bn_LSTM5):
+    hidden = [256] * 8
 
 
 class base_better(Base):
