@@ -112,6 +112,16 @@ class LSTM4_base_epoch300_ROP_bn(Base):
     wandb_group = "MakePytorchMatch"
     add_bn_after_lstm = True
 
+class LSTM4_base_epoch300_ROP_bn_2(Base):
+    wandb_group = "MakePytorchMatch"
+    add_bn_after_lstm = True
+    use_RC_together = True
+    drop_useless_cols = True
+
+class LSTM4_base_epoch300_ROP_bn_LSTM5(LSTM4_base_epoch300_ROP_bn_2):
+    hidden = [256] * 5
+
+
 
 class base_IP_only(Base):
     use_in_phase_only = True
