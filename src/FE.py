@@ -98,6 +98,15 @@ def add_features(df, config):
     if config.use_RC_together:
         df['R_C'] = df["R"] + '_' + df["C"]
     df = pd.get_dummies(df)
+    # rearange columns
+    RC_cols = ['R_20', 'R_5', 'R_50', 'C_10', 'C_20', 'C_50',
+               'R_C_20_10', 'R_C_20_20', 'R_C_20_50', 'R_C_50_10', 'R_C_50_20',
+               'R_C_50_50', 'R_C_5_10', 'R_C_5_20', 'R_C_5_50']
+    for col in RC_cols:
+        if col not in df.columns:
+            df[col] = 0
+    None_RC_cols = [col for col in df.columns if col not in RC_cols]
+    df = df[None_RC_cols + RC_cols]
 
     if config.drop_useless_cols:
         drop_cols = ["step", "cross_time", "expand_skew", "expand_kurt"]

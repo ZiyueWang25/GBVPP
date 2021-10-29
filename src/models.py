@@ -56,6 +56,10 @@ class Model(nn.Module):
             if i > 0 else nn.LSTM(input_size, hidden[0], batch_first=True, bidirectional=use_bi)
             for i in range(len(config.hidden))
         ])
+        self.lstm_dos = None
+        if config.lstm_do > 0:
+            self.lstm_dos = nn.ModuleList([nn.Dropout(config.lstm_do) for i in range(len(config.hidden)-1)])
+            
         self.use_dp = len(config.gpu) > 1
         self.use_bn_after_lstm = config.use_bn_after_lstm
         if self.use_bn_after_lstm:
@@ -94,6 +98,9 @@ class Model(nn.Module):
             x, _ = self.lstms[i](x)
             if self.use_bn_after_lstm:
                 x = self.bns[i](x)
+            if self.lstm_dos is not None and i < (len(self.lstms)-1):
+                x = self.lstm_dos[i](x)
+                
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)

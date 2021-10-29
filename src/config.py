@@ -8,8 +8,8 @@ from datetime import datetime
 ## 2. add SWA
 ## 3. Feature Importance Analysis *
 ## 4. Error Analysis
-## 5. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996
-    # check the prediction under diff R & C
+## 5. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996 * 
+    # check the prediction under diff R & C *
 ## 6. KNN features
 
 
@@ -44,16 +44,17 @@ class Base:
     # features
     use_fake_pressure = False
     use_crossSectional_features = True
-    use_RC_together = False
-    drop_useless_cols = False
+    use_RC_together = True
+    drop_useless_cols = True
 
     # Model - LSTM
     hidden = [512, 256, 128, 64]
+    lstm_do = 0
     bidirectional = True
     nh = 256
     do_prob = 0
     fc = 50
-    use_bn_after_lstm = False
+    use_bn_after_lstm = True
 
     # Model - transformer
     d_model = 256
@@ -113,9 +114,10 @@ class LSTM4_base_epoch300_ROP_bn(Base):
 
 class LSTM4_base_epoch300_ROP_bn_2(Base):
     wandb_group = "MakePytorchMatch"
-    add_bn_after_lstm = True
-    use_RC_together = True
-    drop_useless_cols = True
+
+class LSTM4_unitVar(LSTM4_base_epoch300_ROP_bn_2):
+    unit_var = True
+
 
 class LSTM4_base_epoch300_ROP_bn_LSTM5(LSTM4_base_epoch300_ROP_bn_2):
     hidden = [256] * 5
@@ -132,6 +134,18 @@ class LSTM5_OP01_huber025(LSTM4_base_epoch300_ROP_bn_LSTM5):
     loss_fnc = "huber"
     delta = 0.25
 
+class LSTM5_OP01_huber025_PL(LSTM5_OP01_huber025):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025/"
+
+class LSTM5_OP01_huber025_PL2(LSTM5_OP01_huber025):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL/"
+
+class LSTM5_OP01_huber025_PL3(LSTM5_OP01_huber025):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL2/"
+
+class LSTM5_OP01_huber025_bn(LSTM5_OP01_huber025):
+    PL_folder = None
+
 class LSTM6(LSTM4_base_epoch300_ROP_bn_LSTM5):
     hidden = [256] * 6
 
@@ -141,6 +155,15 @@ class LSTM7(LSTM4_base_epoch300_ROP_bn_LSTM5):
 class LSTM8(LSTM4_base_epoch300_ROP_bn_LSTM5):
     hidden = [256] * 8
 
+
+class LSTM5_CLS_do02(LSTM5_OP01_huber025):
+    loss_fnc = "ce"
+    do_reg = False
+    lstm_do = 0.2
+
+class LSTM5_CLS_do01(LSTM5_CLS_do02):
+    lstm_do = 0.1
+    
 
 class base_better(Base):
     wandb_group = "betterConfig"

@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torch.optim.swa_utils import AveragedModel
 from dataset import *
 from models import get_model
+from util import smart_avg
 
 
 def get_pred(loader, model, device, do_reg=True):
@@ -71,7 +72,7 @@ def get_test_avg(test_df, config, cv):
     print("transform")
     pressure_unique = np.load(config.pressure_unique_path)
     fold_pred_cols = [f"preds_fold{fold}" for fold in config.train_folds]
-    test_avg["pressure"] = test_avg[fold_pred_cols].median(axis=1)
+    test_avg["pressure"] = smart_avg(test_avg[fold_pred_cols],axis=1)
     test_avg["pressure"] = test_avg[f"pressure"].map(lambda x: pressure_unique[np.abs(pressure_unique - x).argmin()])
     test_avg.to_csv(config.model_output_folder + f"/test_pred_all_{cv_str}.csv", index=False)
     test_avg[['id', 'pressure']].to_csv(config.model_output_folder + f"/submission_{cv_str}.csv", index=False)
