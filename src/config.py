@@ -9,6 +9,7 @@ from datetime import datetime
 ## 3. add SWA
 ## 4. remove huge error cases (?)
 ## 5. KNN features
+## 6. change the loss function to give 0.1 weight to samples
 
 class Base:
     # data
@@ -46,8 +47,10 @@ class Base:
 
     # Model - rnn
     rnn_model = "LSTM"  # GRU
-    hidden = [256] * 5
+    hidden = [128 + 256 - 64 * i for i in range(5)]
     rnn_do = 0
+    # if we use residual block format, number of gru should be 1 smaller than lstm
+    hidden_gru = [384, 256, 128, 64]
     
     # head 
     use_ch = True
@@ -57,9 +60,9 @@ class Base:
     # Model - transformer
     use_transformer = False
     d_model = 256
-    n_head = 8
+    n_head = 12
     tsf_do = 0.1
-    dim_forward = 1024
+    dim_forward = 2048
     num_layers = 2
 
     # training
@@ -69,7 +72,7 @@ class Base:
     train_folds = [0]
     batch_size = 512
     optimizer = "AdamW"
-    lr = 1e-3
+    lr = 2e-3
     weight_decay = 1e-4
     scheduler = 'ReduceLROnPlateau' #'ReduceLROnPlateau'
     warmup = 20
@@ -88,7 +91,7 @@ class Base:
     use_wandb = True
     wandb_project = "GBVPP_newCV"
     wandb_post = ""
-    wandb_group = "newCV"
+    wandb_group = None
     print_num_steps = 100
 
     # speed
@@ -96,118 +99,21 @@ class Base:
     use_auto_cast = True
 
 
-class base_no_strict_scale(Base):
-    strict_scale = False
+class newStart(Base):
+    wandb_group = "newStart"
 
-class base_fork(Base):
-    # https://www.kaggle.com/dienhoa/ventillator-fastai-lb-0-169-no-kfolds-no-blend
-    strict_scale = False
-    hidden = [512, 256, 128, 128]
-    fc = 128
-    lr = 2e-3
+class LSTM5_REG(newStart):
+    pass
 
-
-class LSTM4_base_epoch300_ROP_bn(Base):
-    wandb_group = "MakePytorchMatch"
-    add_bn_after_lstm = True
-
-class LSTM4_base_epoch300_ROP_bn_2(Base):
-    wandb_group = "MakePytorchMatch"
-
-class LSTM4_unitVar(LSTM4_base_epoch300_ROP_bn_2):
-    unit_var = True
-
-
-class LSTM4_base_epoch300_ROP_bn_LSTM5(LSTM4_base_epoch300_ROP_bn_2):
-    hidden = [256] * 5
-
-class LSTM5_OP01(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    out_phase_weight = 0.1
-
-class LSTM5_OP01_fc128(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    out_phase_weight = 0.1
-    fc = 128
-
-class LSTM5_OP01_huber025(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    out_phase_weight = 0.1
-    loss_fnc = "huber"
-    delta = 0.25
-
-class LSTM5_OP01_huber025_PL(LSTM5_OP01_huber025):
-    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025/"
-
-class LSTM5_OP01_huber025_PL2(LSTM5_OP01_huber025):
-    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL/"
-
-class LSTM5_OP01_huber025_PL3(LSTM5_OP01_huber025):
-    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL2/"
-
-class LSTM5_OP01_huber025_bn(LSTM5_OP01_huber025):
-    PL_folder = None
-
-class GRU5_OP01_huber025_bn(LSTM5_OP01_huber025):
-    rnn_model="gru"    
-    
-class LSTM5_OP01_huber025_bn_autoCast(LSTM5_OP01_huber025_bn):
-    use_auto_cast = True
-    
-
-class LSTM6(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    hidden = [256] * 6
-
-class LSTM7(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    hidden = [256] * 7
-
-class LSTM8(LSTM4_base_epoch300_ROP_bn_LSTM5):
-    hidden = [256] * 8
-
-class LSTM5_CLS_do02(LSTM5_OP01_huber025):
-    loss_fnc = "ce"
+class LSTM5_CLS_DO02(newStart):
     do_reg = False
+    loss_fnc = "ce"
     rnn_do = 0.2
-    
-class LSTM5_CLS_do02_autoCast(LSTM5_CLS_do02):
-    use_auto_cast = True
 
-class LSTM5_CLS_do03(LSTM5_CLS_do02_autoCast):
-    rnn_do = 0.3    
+class LSTM3_TSF2(newStart):
+    hidden = [256] * 3
+    num_layer = 2
 
-class LSTM5_CLS_do04(LSTM5_CLS_do02_autoCast):
-    rnn_do = 0.4    
-    
-    
-
-class base_better(Base):
-    wandb_group = "betterConfig"
-    use_bn_after_lstm = True
-    use_RC_together = True
-    loss_fnc = "huber"
-    delta = 0.1
-    fc = 64
-
-
-class PulpFiction(base_better):
-    model_module = "PulpFiction"
-    hidden = [768, 512, 384, 256, 128]
-    hidden_gru = [384, 256, 128, 64]
-    fc = 128
-    factor = 0.85
-    patience = 7
-    es = 21
-    
-class Model_2RNN(Base):
-    wandb_group = "2RNN"
-    model_module = "PulpFiction"
-    hidden = [512, 384, 256, 128]
-    hidden_gru = [256, 128, 64]
-    fc = 128
-    lr = 1e-3
-
-class Model_2RNN_5LSTM_4GRU(Model_2RNN):
-    wandb_group = "2RNN"
-    hidden = [256] * 5
-    hidden_gru = [256] * 4
-    
 
 
 def update_config(config):

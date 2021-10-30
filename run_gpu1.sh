@@ -94,10 +94,11 @@
 # CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_OP01_huber025_PL2 --train_folds 4 --debug 0 --gpu 1
 # CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_OP01_huber025_PL2 --train_folds 0 1 2 3 4 --debug 0 --gpu 1
 
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_do02 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_do02 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config Model_2RNN --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config Model_2RNN --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config Model_2RNN_5LSTM_4GRU --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_do02 --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_do02 --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config Model_2RNN --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config Model_2RNN --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config Model_2RNN_5LSTM_4GRU --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM3_TSF2 --train_folds 0 --debug 0 --gpu 1
