@@ -72,15 +72,13 @@ class Model(nn.Module):
         self.transformer_encoder = None
         if config.use_transformer:
             self.seq_emb = nn.Sequential(
-                nn.Linear(input_size, config.d_model),
-                nn.LayerNorm(config.d_model),
+                nn.Linear(input_size, config.d_model), #?
                 act,
-                nn.Dropout(config.do_transformer),
             )
-            self.pos_encoder = PositionalEncoding(d_model=config.d_model, dropout=config.trf_do)
+            self.pos_encoder = PositionalEncoding(d_model=config.d_model, dropout=config.tsf_do)
             encoder_layers = nn.TransformerEncoderLayer(d_model=config.d_model, nhead=config.n_head,
                                                         dim_feedforward=config.dim_forward,
-                                                        dropout=config.do_transformer, batch_first=True)
+                                                        dropout=config.tsf_do, batch_first=True)
             self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=config.num_layers)        
         
         net_fnc = nn.LSTM if config.rnn_model=="LSTM" else nn.GRU
@@ -125,7 +123,7 @@ class Model(nn.Module):
                     nn.init.xavier_uniform_(p.data)
                 elif 'weight_hh' in name:
                     nn.init.orthogonal_(p.data)
-            elif 'fc' in name or "head" in name and "BatchNorm" not in name:
+            elif 'fc' in name or "head" in name and "BatchNorm" not in name and "encoder" not in name:
                 if 'weight' in name:
                     nn.init.xavier_uniform_(p.data)
                 elif 'bias' in name:

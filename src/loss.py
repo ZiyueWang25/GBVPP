@@ -17,16 +17,20 @@ def get_loss(config):
 def cal_ce_loss(y_true, y_pred, weight):
     return nn.CrossEntropyLoss()(y_pred.reshape(-1, 950), y_true.reshape(-1))
 
-
 def cal_ce_loss_custom(y_true, y_pred, weight):
-    probs = nn.Softmax(-1)(y_pred.reshape(-1,950))
-    loss = - torch.log(probs[torch.arange(0,probs.size(0)), y_true.reshape(-1)]) * weight
-    return loss.sum() / weight.sum()
-
+    y_pred = nn.Softmax(dim=-1)(y_pred.reshape(-1,950))
+    y_true = y_true.reshape(-1)
+    weight = weight.reshape(-1)
+    probs = y_pred[torch.arange(0, y_pred.shape[0]), y_true.reshape(-1)].reshape(-1)
+    probs, weights = probs[probs==probs], weight[probs==probs]
+    loss = - (torch.log(probs) * weights).sum() / weights.sum()
+    return loss
 
 def cal_mae_loss(y_true, y_pred, weight):
+    y_true, y_pred, weight = y_true[y_pred == y_pred], y_pred[y_pred == y_pred], weight[y_pred == y_pred]    
     return (torch.abs(y_true - y_pred) * weight).sum() / weight.sum()
 
 
 def cal_huber_loss(y_true, y_pred, weight, delta=1):
+    y_true, y_pred, weight = y_true[y_pred == y_pred], y_pred[y_pred == y_pred], weight[y_pred == y_pred]    
     return nn.HuberLoss(delta=delta)(y_true * weight, y_pred)

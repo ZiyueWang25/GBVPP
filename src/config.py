@@ -10,6 +10,8 @@ from datetime import datetime
 ## 4. remove huge error cases (?)
 ## 5. KNN features
 ## 6. change the loss function to give 0.1 weight to samples * 
+## 7. deal with NaN issue * 
+
 
 class Base:
     # data
@@ -43,6 +45,7 @@ class Base:
     use_fake_pressure = False
     use_crossSectional_features = True
     use_RC_together = True
+    use_physics_fe = False
     drop_useless_cols = True
 
     # Model - rnn
@@ -60,8 +63,8 @@ class Base:
     # Model - transformer
     use_transformer = False
     d_model = 256
-    n_head = 12
-    tsf_do = 0.1
+    n_head = 8
+    tsf_do = 0.2
     dim_forward = 2048
     num_layers = 2
 
@@ -86,6 +89,9 @@ class Base:
 
     # swa
     use_swa = False
+    swa_start_step = None
+    swa_start_epoch = None
+    swa_val_score_th = 0.2
 
     # logging
     use_wandb = True
@@ -105,17 +111,54 @@ class newStart(Base):
 class LSTM5_REG(newStart):
     pass
 
+class LSTM5_REG_PL(LSTM5_REG):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
+
+class LSTM7_REG_PL(LSTM5_REG):
+    hidden = [256] * 7
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
+
+
 class LSTM5_CLS_DO02(newStart):
     do_reg = False
     loss_fnc = "ce"
     rnn_do = 0.2
 
-class LSTM5_CLS_DO02_customLoss(LSTM5_CLS_DO02):
+
+class LSTM5_CLS_DO02_OP01(LSTM5_CLS_DO02):
     loss_fnc = "ce_custom"
 
+class LSTM5_CLS_DO02_OP01_physics(LSTM5_CLS_DO02_OP01):
+    use_physics_fe = True
+
+
+class LSTM5_CLS_DO02_IPOnly(LSTM5_CLS_DO02_OP01):
+    loss_fnc = "ce_custom"
+    use_in_phase_only = True
+
+class LSTM5_CLS_DO02_OP01_PL(LSTM5_CLS_DO02_OP01):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
+
+
 class LSTM3_TSF2(newStart):
+    use_transformer = True
     hidden = [256] * 3
     num_layer = 2
+
+class LSTM3_TSF4_DO0(LSTM3_TSF2):
+    tsf_do = 0
+    num_layer = 4
+
+class LSTM3_TSF4_DO0_dim512(LSTM3_TSF2):
+    tsf_do = 0
+    num_layer = 4
+    d_model = 512
+
+
+
+
+class LSTM3_TSFxx():
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
 
 
 

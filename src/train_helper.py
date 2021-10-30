@@ -36,7 +36,7 @@ def training_loop(train_df, config):
         wandb.finish()
 
 
-def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epoch=None, **kwargs):
+def run_fold(fold, original_train_df, config, **kwargs):
     train_df = generate_PL(fold, original_train_df.copy(), config)
     X_train, y_train, w_train, X_valid, y_valid, w_valid = prepare_train_valid(train_df, config, fold)
 
@@ -63,6 +63,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     optimizer = get_optimizer(model, config)
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
+    if config.use_swa:
+        swa_model, swa_scheduler = get_swa(model, optimizer, len(train_dt), config)
     best_valid_score = np.inf
     if config.ckpt_folder is not None:
         print(f"Load Checkpoint from folder: {config.ckpt_folder}")
@@ -73,8 +75,8 @@ def run_fold(fold, original_train_df, config, swa_start_step=None, swa_start_epo
     trainer = Trainer(model, optimizer, criterion, scheduler,
                       y_valid, w_valid,
                       best_valid_score, fold, config,
-                      swa_model=swa_model, swa_scheduler=swa_scheduler,
-                      swa_start_step=swa_start_step, swa_start_epoch=swa_start_epoch)
+                      swa_model=swa_model, 
+                      swa_scheduler=swa_scheduler)
 
     trainer.fit(
         epochs=config.epochs,
@@ -108,8 +110,7 @@ class Trainer:
         # swa
         self.swa_model = swa_model
         self.swa_scheduler = swa_scheduler
-        self.swa_start_epoch = swa_start_epoch
-        self.swa_start_step = swa_start_step
+        self.swa_val_score_th = config.swa_val_score_th
         self.step = 0  # for swa
 
         # speed
@@ -130,10 +131,7 @@ class Trainer:
             train_loss, lr = self.train_epoch(train_loader, n_epoch)
             valid_loss, valid_preds = self.valid_epoch(valid_loader, self.model)
 
-            if self.swa_model is not None:
-                if n_epoch >= self.swa_start_epoch:
-                    print(f"Epoch {n_epoch}, update swa model")
-                    self.swa_model.update_parameters(self.model)
+
 
             train_losses.append(train_loss)
             valid_losses.append(valid_loss)
@@ -149,17 +147,23 @@ class Trainer:
             else:
                 es_cnt += 1
 
+            if self.swa_model is not None:
+                if valid_score <= self.swa_val_score_th:
+                    print(f"Epoch {n_epoch}, update swa model")
+                    self.swa_model.update_parameters(self.model)
+
+
             print('loss:  {:.4f}, val_loss {:.4f}, val_score {:.4f}, best_val_score {:.4f}, lr {:.5f} '
                   '--- use {:.3f}s'.format(train_loss, valid_loss, valid_score, self.best_valid_score, lr,
                                            time.time() - start_time))
             if self.use_wandb:
                 wandb.log({f"fold epoch": n_epoch + 1,
+                           f"[fold{self.fold}] lr": lr,
                            f"[fold{self.fold}] avg_train_loss": train_loss,
                            f"[fold{self.fold}] avg_val_loss": valid_loss,
                            f"[fold{self.fold}] val_score": valid_score,
                            f"[fold{self.fold}] best_val_score": self.best_valid_score,
                            })
-                # save swa
             if es_cnt >= self.es:
                 print("Early Stop")
                 break
@@ -170,14 +174,13 @@ class Trainer:
             valid_score_swa = cal_mae_metric(self.y_valid, valid_preds_swa, self.w_valid)
             print("SWA: Valid Loss {:.5f}, Valid Score {:.5f}".format(valid_loss_swa, valid_score_swa))
             if self.use_wandb:
-                wandb.log({f"[fold{self.fold}] avg_val_loss_swa": valid_loss_swa,
+                wandb.log({f"[fold{self.fold}] val_loss_swa": valid_loss_swa,
                            f"[fold{self.fold}] val_score_swa": valid_score_swa})
             # update batch normalization
             save_dict = {
                 "swa_model_state_dict": self.swa_model.state_dict(),
-                "swa_scheduler": self.swa_scheduler.state_dict(),
-                "valid_loss_swa": valid_loss_swa,
                 "valid_score_swa": valid_score_swa,
+                'valid_preds': valid_preds, 
             }
             torch.save(save_dict, save_path + f'swa_model.pth')
 
@@ -195,12 +198,7 @@ class Trainer:
 
             with autocast(enabled=self.use_auto_cast):
                 outputs = self.model(X).squeeze()
-                # get rid of NaN
-                if self.do_reg:
-                    loss = self.criterion(targets[outputs == outputs], outputs[outputs == outputs],
-                                          weights[outputs == outputs])
-                else:
-                    loss = self.criterion(targets, outputs, weights)
+                loss = self.criterion(targets, outputs, weights)
 
             scaler.scale(loss).backward()
             scaler.unscale_(self.optimizer)
@@ -234,7 +232,7 @@ class Trainer:
                 targets = batch[1].to(self.device)
                 weights = batch[2].to(self.device)
                 outputs = model(X).squeeze()
-                loss = self.criterion(targets, outputs, weights)
+                loss = self.criterion(targets, outputs, weights)                    
                 valid_loss.append(loss.detach().item())
                 preds.append(outputs.to('cpu').detach().numpy())
         predictions = np.concatenate(preds, axis=0)

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def add_features_choice(df, config):
@@ -90,6 +91,20 @@ def add_features(df, config):
             df[f"pressure_prev_lag_back{i+1}_minus_lag_back{i}"] = df[f"pressure_prev_lag_back{i+1}"] - df[f"pressure_prev_lag_back{i}"]
     # rate
     df['u_in_rate'] = df['u_in_diff1'] / df['time_delta']
+    
+    # physics feature
+    if config.use_physics_fe:
+        print("-- generate physics features --")
+        df['area_2'] = df['time_step'] * df['u_in']
+        df['area_2'] = df.groupby('breath_id')['area_2'].cumsum()
+        df['time_step_cumsum'] = df.groupby(['breath_id'])['time_step'].cumsum()
+        df['exponent']=(- df['time_step'])/(df['R']*df['C'])
+        df['factor']= np.exp(df['exponent'])
+        df['vf']=(df['u_in_cumsum']*df['R'])/df['factor']
+        df['vt']=0
+        df.loc[df['time_step'] != 0, 'vt']=df['area']/(df['C']*(1 - df['factor']))
+        df['v']=df['vf']+df['vt']        
+        df.drop(columns=["exponent", "factor"], inplace=True)
 
     # R C
     print("--- Generate R C features ---")

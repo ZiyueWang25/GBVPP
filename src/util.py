@@ -3,6 +3,7 @@ import os
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, CosineAnnealingLR, ReduceLROnPlateau, CyclicLR
+from torch.optim.swa_utils import AveragedModel, SWALR
 from transformers import get_cosine_schedule_with_warmup
 import pickle
 
@@ -16,6 +17,24 @@ def seed_torch(seed=42):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
+
+def get_swa(model, optimizer, train_size, config):
+    ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged:\
+            0.4 * averaged_model_parameter + 0.6 * model_parameter
+    swa_model = AveragedModel(model, avg_fn=ema_avg)
+    epoch_step = train_size / config.batch_size
+    swa_scheduler = SWALR(optimizer,
+                          anneal_strategy="cos",
+                          anneal_epochs=int(epoch_step * (config.epochs - 1)),
+                          swa_lr=config.swa_lr)
+    return swa_model, None
+
+
+def do_swa_scheduler(step, swa_scheduler, swa_start_step):
+    if (swa_scheduler is not None) and (step >= swa_start_step):
+        return True
+    else:
+        return False
 
 def get_scheduler(optimizer, train_size, config):
     if config.scheduler == 'ReduceLROnPlateau':

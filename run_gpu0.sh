@@ -95,5 +95,12 @@
 # CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_do02_autoCast --train_folds 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG --train_folds 0 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_customLoss --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_customLoss --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM3_TSF4_DO0_dim512 --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM3_TSF2 --train_folds 0 --debug 0 --gpu 0
+
+
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_REG_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_OP01 --train_folds 0 --debug 0 --gpu 0

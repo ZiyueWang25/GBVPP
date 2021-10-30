@@ -156,8 +156,7 @@ def generate_PL(fold, train_df, config):
 def num_2_cls_func(y, pressure_unique_path):
     print("Transform number into class")
     pressure_unique = np.load(pressure_unique_path)
-    num_to_cls_dict = dict(zip(pressure_unique, list(range(len(pressure_unique)))))
-    num_to_cls_func = np.vectorize(lambda x: num_to_cls_dict[x] if x != -999 else x)
+    num_to_cls_func = np.vectorize(lambda x: np.abs(pressure_unique-x).argmin())
     return num_to_cls_func(y)
 
 
