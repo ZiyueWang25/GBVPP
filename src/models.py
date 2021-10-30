@@ -100,10 +100,10 @@ class Model(nn.Module):
         
         self.use_dp = len(config.gpu) > 1
         
-        if self.use_ch:
+        if config.use_ch:
             self.head = nn.Sequential(
-                nn.Linear(hidden[-1] * 2, config.fc), nn.BatchNorm1d(80), nn.Dropout(config.ch_do), act,
-                nn.Linear(config.fc, config.fc//2), nn.BatchNorm1d(80), nn.Dropout(config.ch_do), act,
+                nn.Linear(hidden[-1] * 2, config.fc * 2), nn.BatchNorm1d(80), nn.Dropout(config.ch_do), act,
+                nn.Linear(config.fc * 2, config.fc), nn.BatchNorm1d(80), nn.Dropout(config.ch_do), act,
             )
         else:
             self.head = nn.Sequential(nn.Linear(2 * hidden[-1], config.fc), act)
@@ -125,7 +125,7 @@ class Model(nn.Module):
                     nn.init.xavier_uniform_(p.data)
                 elif 'weight_hh' in name:
                     nn.init.orthogonal_(p.data)
-            elif 'fc' in name or "head" in name:
+            elif 'fc' in name or "head" in name and "BatchNorm" not in name:
                 if 'weight' in name:
                     nn.init.xavier_uniform_(p.data)
                 elif 'bias' in name:

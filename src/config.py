@@ -9,7 +9,7 @@ from datetime import datetime
 ## 3. add SWA
 ## 4. remove huge error cases (?)
 ## 5. KNN features
-## 6. change the loss function to give 0.1 weight to samples
+## 6. change the loss function to give 0.1 weight to samples * 
 
 class Base:
     # data
@@ -47,14 +47,14 @@ class Base:
 
     # Model - rnn
     rnn_model = "LSTM"  # GRU
-    hidden = [128 + 256 - 64 * i for i in range(5)]
+    hidden = [256] * 5
     rnn_do = 0
     # if we use residual block format, number of gru should be 1 smaller than lstm
-    hidden_gru = [384, 256, 128, 64]
+    hidden_gru = [256] * 4
     
     # head 
-    use_ch = True
-    fc = 128
+    fc = 50
+    use_ch = False
     ch_do = 0.1
 
     # Model - transformer
@@ -72,7 +72,7 @@ class Base:
     train_folds = [0]
     batch_size = 512
     optimizer = "AdamW"
-    lr = 2e-3
+    lr = 1e-3
     weight_decay = 1e-4
     scheduler = 'ReduceLROnPlateau' #'ReduceLROnPlateau'
     warmup = 20
@@ -109,6 +109,9 @@ class LSTM5_CLS_DO02(newStart):
     do_reg = False
     loss_fnc = "ce"
     rnn_do = 0.2
+
+class LSTM5_CLS_DO02_customLoss(LSTM5_CLS_DO02):
+    loss_fnc = "ce_custom"
 
 class LSTM3_TSF2(newStart):
     hidden = [256] * 3
