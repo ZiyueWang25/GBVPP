@@ -86,6 +86,13 @@
 # CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025_PL2 --train_folds 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025_PL3 --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_huber025_PL3 --train_folds 0 1 2 3 4  --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025_bn --train_folds 0  --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_huber025_bn --train_folds 0  --debug 0 --gpu 0
-
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025_bn --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_huber025_bn --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_OP01_huber025_bn_autoCast --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config GRU5_OP01_huber025_bn --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_OP01_huber025_bn_autoCast --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_do04 --train_folds 0 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_do02_autoCast --train_folds 1 2 3 4 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 1 2 3 4 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_CLS_do02_autoCast --train_folds 0 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_do03 --train_folds 0 --debug 0 --gpu 0

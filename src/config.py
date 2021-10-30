@@ -4,14 +4,11 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 ## TODO:
-## 1. transformer based model *
-## 2. add SWA
-## 3. Feature Importance Analysis *
-## 4. Error Analysis
-## 5. noise in R & C https://www.kaggle.com/c/ventilator-pressure-prediction/discussion/280996 * 
-    # check the prediction under diff R & C *
-## 6. KNN features
-
+## 1. why mix-precision decrease performance? * 
+## 2. use GRU, LSTM, transformer together *
+## 3. add SWA
+## 4. remove huge error cases (?)
+## 5. KNN features
 
 class Base:
     # data
@@ -27,7 +24,7 @@ class Base:
     # general
     debug = False
     model_version = "base_version"
-    model_module = "BASE" # "CH", "PulpFiction", "transformer"
+    model_module = "BASE" # "RES"
     PL_folder = None
     seed = 48
     ckpt_folder = None
@@ -47,19 +44,21 @@ class Base:
     use_RC_together = True
     drop_useless_cols = True
 
-    # Model - LSTM
-    hidden = [512, 256, 128, 64]
-    lstm_do = 0
-    bidirectional = True
-    nh = 256
-    do_prob = 0
-    fc = 50
-    use_bn_after_lstm = True
+    # Model - rnn
+    rnn_model = "LSTM"  # GRU
+    hidden = [256] * 5
+    rnn_do = 0
+    
+    # head 
+    use_ch = True
+    fc = 128
+    ch_do = 0.1
 
     # Model - transformer
+    use_transformer = False
     d_model = 256
     n_head = 8
-    do_transformer = 0.1
+    tsf_do = 0.1
     dim_forward = 1024
     num_layers = 2
 
@@ -78,9 +77,9 @@ class Base:
     patience = 10
 
     use_in_phase_only = False
-    out_phase_weight = None
-    loss_fnc = "mae" #huber
-    delta = None
+    out_phase_weight = 0.1
+    loss_fnc = "huber" #huber
+    delta = 0.25
 
     # swa
     use_swa = False
@@ -94,7 +93,7 @@ class Base:
 
     # speed
     num_workers = 8
-    use_auto_cast = False
+    use_auto_cast = True
 
 
 class base_no_strict_scale(Base):
@@ -146,6 +145,13 @@ class LSTM5_OP01_huber025_PL3(LSTM5_OP01_huber025):
 class LSTM5_OP01_huber025_bn(LSTM5_OP01_huber025):
     PL_folder = None
 
+class GRU5_OP01_huber025_bn(LSTM5_OP01_huber025):
+    rnn_model="gru"    
+    
+class LSTM5_OP01_huber025_bn_autoCast(LSTM5_OP01_huber025_bn):
+    use_auto_cast = True
+    
+
 class LSTM6(LSTM4_base_epoch300_ROP_bn_LSTM5):
     hidden = [256] * 6
 
@@ -155,14 +161,20 @@ class LSTM7(LSTM4_base_epoch300_ROP_bn_LSTM5):
 class LSTM8(LSTM4_base_epoch300_ROP_bn_LSTM5):
     hidden = [256] * 8
 
-
 class LSTM5_CLS_do02(LSTM5_OP01_huber025):
     loss_fnc = "ce"
     do_reg = False
-    lstm_do = 0.2
+    rnn_do = 0.2
+    
+class LSTM5_CLS_do02_autoCast(LSTM5_CLS_do02):
+    use_auto_cast = True
 
-class LSTM5_CLS_do01(LSTM5_CLS_do02):
-    lstm_do = 0.1
+class LSTM5_CLS_do03(LSTM5_CLS_do02_autoCast):
+    rnn_do = 0.3    
+
+class LSTM5_CLS_do04(LSTM5_CLS_do02_autoCast):
+    rnn_do = 0.4    
+    
     
 
 class base_better(Base):
@@ -182,6 +194,20 @@ class PulpFiction(base_better):
     factor = 0.85
     patience = 7
     es = 21
+    
+class Model_2RNN(Base):
+    wandb_group = "2RNN"
+    model_module = "PulpFiction"
+    hidden = [512, 384, 256, 128]
+    hidden_gru = [256, 128, 64]
+    fc = 128
+    lr = 1e-3
+
+class Model_2RNN_5LSTM_4GRU(Model_2RNN):
+    wandb_group = "2RNN"
+    hidden = [256] * 5
+    hidden_gru = [256] * 4
+    
 
 
 def update_config(config):
