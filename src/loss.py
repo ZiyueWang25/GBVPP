@@ -18,12 +18,12 @@ def cal_ce_loss(y_true, y_pred, weight):
     return nn.CrossEntropyLoss()(y_pred.reshape(-1, 950), y_true.reshape(-1))
 
 def cal_ce_loss_custom(y_true, y_pred, weight):
-    y_pred = nn.Softmax(dim=-1)(y_pred.reshape(-1,950))
+    y_pred = nn.LogSoftmax(dim=-1)(y_pred.reshape(-1,950))
     y_true = y_true.reshape(-1)
     weight = weight.reshape(-1)
-    probs = y_pred[torch.arange(0, y_pred.shape[0]), y_true.reshape(-1)].reshape(-1)
-    probs, weights = probs[probs==probs], weight[probs==probs]
-    loss = - (torch.log(probs) * weights).sum() / weights.sum()
+    logs = y_pred[torch.arange(0, y_pred.shape[0]), y_true.reshape(-1)].reshape(-1)
+    logs, weights = logs[logs==logs], weight[logs==logs]
+    loss = - (logs * weights).sum() / weights.sum()
     return loss
 
 def cal_mae_loss(y_true, y_pred, weight):

@@ -22,11 +22,11 @@ def get_swa(model, optimizer, train_size, config):
     ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged:\
             0.4 * averaged_model_parameter + 0.6 * model_parameter
     swa_model = AveragedModel(model, avg_fn=ema_avg)
-    epoch_step = train_size / config.batch_size
-    swa_scheduler = SWALR(optimizer,
-                          anneal_strategy="cos",
-                          anneal_epochs=int(epoch_step * (config.epochs - 1)),
-                          swa_lr=config.swa_lr)
+    # epoch_step = train_size / config.batch_size
+    # swa_scheduler = SWALR(optimizer,
+    #                       anneal_strategy="cos",
+    #                       anneal_epochs=int(epoch_step * (config.epochs - 1)),
+    #                       swa_lr=config.swa_lr)
     return swa_model, None
 
 

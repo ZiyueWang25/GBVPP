@@ -64,6 +64,7 @@ def run_fold(fold, original_train_df, config, **kwargs):
     scheduler = get_scheduler(optimizer, len(X_train), config)
     swa_model, swa_scheduler = None, None
     if config.use_swa:
+        print("initialize SWA model")
         swa_model, swa_scheduler = get_swa(model, optimizer, len(train_dt), config)
     best_valid_score = np.inf
     if config.ckpt_folder is not None:
@@ -91,8 +92,7 @@ class Trainer:
     def __init__(self, model, optimizer, criterion, scheduler,
                  y_valid, w_valid,
                  best_valid_score, fold, config,
-                 swa_model=None, swa_scheduler=None, swa_start_step=None,
-                 swa_start_epoch=None, **kwargs):
+                 swa_model=None, swa_scheduler=None, **kwargs):
         self.model = model
         self.device = config.device
         self.optimizer = optimizer
@@ -178,8 +178,8 @@ class Trainer:
                            f"[fold{self.fold}] val_score_swa": valid_score_swa})
             # update batch normalization
             save_dict = {
-                "swa_model_state_dict": self.swa_model.state_dict(),
-                "valid_score_swa": valid_score_swa,
+                "model_state_dict": self.swa_model.state_dict(),
+                "best_valid_score": valid_score_swa,
                 'valid_preds': valid_preds, 
             }
             torch.save(save_dict, save_path + f'swa_model.pth')
@@ -198,7 +198,11 @@ class Trainer:
 
             with autocast(enabled=self.use_auto_cast):
                 outputs = self.model(X).squeeze()
+                numNaN = torch.isnan(outputs).sum()
                 loss = self.criterion(targets, outputs, weights)
+                if numNaN > 0 or torch.isnan(loss):
+                    print("NumNaN: ", numNaN)
+                    print("loss: ", loss)
 
             scaler.scale(loss).backward()
             scaler.unscale_(self.optimizer)

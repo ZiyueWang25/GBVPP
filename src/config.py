@@ -6,12 +6,12 @@ from datetime import datetime
 ## TODO:
 ## 1. why mix-precision decrease performance? * 
 ## 2. use GRU, LSTM, transformer together *
-## 3. add SWA
+## 3. add SWA *
 ## 4. remove huge error cases (?)
 ## 5. KNN features
 ## 6. change the loss function to give 0.1 weight to samples * 
 ## 7. deal with NaN issue * 
-
+## 8. make transformer work
 
 class Base:
     # data
@@ -131,6 +131,12 @@ class LSTM5_CLS_DO02_OP01(LSTM5_CLS_DO02):
 class LSTM5_CLS_DO02_OP01_physics(LSTM5_CLS_DO02_OP01):
     use_physics_fe = True
 
+class LSTM5_CLS_DO02_OP01_physics_PL(LSTM5_CLS_DO02_OP01_physics):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1030/"
+
+class LSTM5_CLS_DO02_OP01_physics_SWA(LSTM5_CLS_DO02_OP01_physics):
+    use_swa = True
+
 
 class LSTM5_CLS_DO02_IPOnly(LSTM5_CLS_DO02_OP01):
     loss_fnc = "ce_custom"
@@ -169,8 +175,9 @@ def update_config(config):
     if config.model_output_folder and not os.path.exists(config.model_output_folder):
         os.makedirs(config.model_output_folder)
     if config.debug:
-        config.epochs = 1
+        config.epochs = 3
         config.train_folds = [0]
+        config.swa_val_score_th = 100
     if config.use_wandb:
         if config.wandb_group is None:
             config.wandb_group = config.model_module

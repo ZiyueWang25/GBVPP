@@ -54,10 +54,14 @@ def get_test_avg(test_df, config, cv):
 
         model = get_model(X_test.shape[-1], config)
         if config.use_swa:
+            print("Use SWA")
             swa_model = AveragedModel(model)
             checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_swa_model.pth')
             model = swa_model
-            model.load_state_dict(removeDPModule(checkpoint['model_swa_state_dict']))
+            if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
+                model.load_state_dict(removeDPModule(checkpoint['model_state_dict']))
+            else:
+                model.load_state_dict(checkpoint['model_state_dict'])
         else:
             checkpoint = torch.load(f'{config.model_output_folder}/Fold_{fold}_best_model.pth')
             model.load_state_dict(removeDPModule(checkpoint['model_state_dict']))
