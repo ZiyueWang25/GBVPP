@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch.optim.swa_utils import AveragedModel
 from dataset import *
 from models import get_model
-from util import smart_avg
+from util import smart_avg, removeDPModule
 
 
 def get_pred(loader, model, device, do_reg=True):
@@ -36,8 +36,7 @@ def get_cv_score(config):
     return np.mean(cv_scores)
 
 
-def removeDPModule(state_dict):
-    return {key.replace("module.", ""): value for key, value in state_dict.items()}
+
 
 
 def get_test_avg(test_df, config, cv):
@@ -51,7 +50,7 @@ def get_test_avg(test_df, config, cv):
                                  batch_size=config.batch_size//2,
                                  shuffle=False,
                                  num_workers=config.num_workers, pin_memory=True, drop_last=False)
-
+        config.fold = fold
         model = get_model(X_test.shape[-1], config)
         if config.use_swa:
             print("Use SWA")

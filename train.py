@@ -6,6 +6,7 @@ from dataset import read_data
 from FE import add_features_choice
 from config import read_config, update_config, prepare_args
 import os
+import gc
 
 if __name__ == "__main__":
     arg = prepare_args()
@@ -18,6 +19,8 @@ if __name__ == "__main__":
         train, _ = read_data(config)
         print("Read Data: ", train.shape)
         train = add_features_choice(train.copy(), config)
+        train, NAlist = reduce_mem_usage(train)
+        gc.collect()
         print("Build Features: ", train.shape)
         seed_torch(seed=config.seed)
         training_loop(train.copy(), config)

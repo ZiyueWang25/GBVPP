@@ -1,4 +1,5 @@
 import time
+import gc
 from torch import nn
 from torch.cuda.amp import autocast, GradScaler
 from torch.utils.data import DataLoader
@@ -45,6 +46,10 @@ def run_fold(fold, original_train_df, config, **kwargs):
     w_valid_transform = transform_weight(np.copy(w_valid), config)
     train_dt = VPP(X_train, y_train, w_train_transform, config)
     valid_dt = VPP(X_valid, y_valid, w_valid_transform, config)
+    num_feature = X_train.shape[-1]
+    num_X = len(X_train)
+    del X_train, X_valid, y_train, w_train_transform, w_valid_transform
+    gc.collect()
 
     train_loader = DataLoader(train_dt,
                               batch_size=config.batch_size,
@@ -54,14 +59,15 @@ def run_fold(fold, original_train_df, config, **kwargs):
                               batch_size=config.batch_size,
                               shuffle=False,
                               num_workers=config.num_workers, pin_memory=True, drop_last=False)
-
-    model = get_model(X_train.shape[-1], config)
-    print("Model Size: {}".format(get_n_params(model)))
+    config.fold = fold
+    model = get_model(num_feature, config)
+    pp, pp_trainable = get_n_params(model)
+    print("Model Size: {}/{}".format(pp_trainable, pp))
     model.to(config.device)
     if len(config.gpu) > 1 and torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
     optimizer = get_optimizer(model, config)
-    scheduler = get_scheduler(optimizer, len(X_train), config)
+    scheduler = get_scheduler(optimizer, num_X, config)
     swa_model, swa_scheduler = None, None
     if config.use_swa:
         print("initialize SWA model")
@@ -131,8 +137,6 @@ class Trainer:
             train_loss, lr = self.train_epoch(train_loader, n_epoch)
             valid_loss, valid_preds = self.valid_epoch(valid_loader, self.model)
 
-
-
             train_losses.append(train_loss)
             valid_losses.append(valid_loss)
 
@@ -200,9 +204,6 @@ class Trainer:
                 outputs = self.model(X).squeeze()
                 numNaN = torch.isnan(outputs).sum()
                 loss = self.criterion(targets, outputs, weights)
-                if numNaN > 0 or torch.isnan(loss):
-                    print("NumNaN: ", numNaN)
-                    print("loss: ", loss)
 
             scaler.scale(loss).backward()
             scaler.unscale_(self.optimizer)

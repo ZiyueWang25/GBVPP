@@ -21,6 +21,9 @@ if __name__ == "__main__":
         gc.collect()
         print("Read Data: ", test.shape)
         test = add_features_choice(test.copy(), config)
+        test, NAlist = reduce_mem_usage(test)
+        gc.collect()
+        
         print("Build Features: ", test.shape)
         seed_torch(seed=config.seed)
         test_avg = get_test_avg(test, config, cv)

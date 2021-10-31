@@ -2,13 +2,18 @@ import torch
 from torch import nn
 import numpy as np
 import math
+from util import removeDPModule, getAct
+
 
 
 def get_model(input_size, config):
+    print(f"Load Model Module {config.model_module}")
     if config.model_module == "BASE":
         return Model(input_size, config)
     elif config.model_module == "RES":
         return Model_Res(input_size, config)
+    elif config.model_module == "CLS_TSF":
+        return Model_CLS_TFS(input_size, config)
 
 
 class my_round_func(torch.autograd.Function):
@@ -63,7 +68,7 @@ class PositionalEncoding(nn.Module):
 class Model(nn.Module):
     def __init__(self, input_size, config):
         super().__init__()
-        act = nn.SELU(inplace=False)
+        act = getAct(config)
         hidden = config.hidden
         self.do_reg = config.do_reg
         
@@ -94,7 +99,8 @@ class Model(nn.Module):
             ])
             if config.rnn_do > 0:
                 self.rnn_dos = nn.ModuleList([nn.Dropout(config.rnn_do) for _ in range(len(config.hidden)-1)])
-            self.rnn_bns = nn.ModuleList([nn.BatchNorm1d(80) for _ in range(len(config.hidden))])
+            if config.use_bn > 0:
+                self.rnn_bns = nn.ModuleList([nn.BatchNorm1d(80) for _ in range(len(config.hidden))])
         
         self.use_dp = len(config.gpu) > 1
         
@@ -123,7 +129,7 @@ class Model(nn.Module):
                     nn.init.xavier_uniform_(p.data)
                 elif 'weight_hh' in name:
                     nn.init.orthogonal_(p.data)
-            elif 'fc' in name or "head" in name and "BatchNorm" not in name and "encoder" not in name:
+            elif 'fc' in name or "head.0" in name or "head.4" in name:
                 if 'weight' in name:
                     nn.init.xavier_uniform_(p.data)
                 elif 'bias' in name:
@@ -149,6 +155,57 @@ class Model(nn.Module):
         if self.do_reg:
             x = self.scaler(x)
         return x
+    
+class Model_CLS_TFS(nn.Module):    
+    def __init__(self, input_size, config):
+        super(Model_CLS_TFS, self).__init__()
+        act = getAct(config)
+
+        old_state = config.do_reg
+        config.do_reg = False
+        self.cls_model = Model(input_size, config)
+        config.do_reg = old_state
+        path = f'{config.cls_model_output_folder}/Fold_{config.fold}_best_model.pth'
+        print("Load model from " + path)
+        checkpoint = torch.load(path)
+        self.cls_model.load_state_dict(removeDPModule(checkpoint['model_state_dict']))
+        
+        #self.cls_model.load_state_dict(torch.load(load_path))
+        encoder_layers = nn.TransformerEncoderLayer(d_model=config.d_model, 
+                                                    nhead=config.n_head,
+                                                    dim_feedforward=config.dim_forward,
+                                                    dropout=config.tsf_do, batch_first=True)
+        if config.use_pos_encoding:
+            self.regression = nn.Sequential(
+                nn.Linear(950, config.d_model),
+                PositionalEncoding(d_model=config.d_model, dropout=config.tsf_do),
+                nn.TransformerEncoder(encoder_layers, num_layers=config.num_layers),
+                nn.LayerNorm(config.d_model),
+                act,
+            )
+        else:
+            self.regression = nn.Sequential(
+                nn.Linear(950, config.d_model),
+                nn.TransformerEncoder(encoder_layers, num_layers=config.num_layers),
+                nn.LayerNorm(config.d_model),
+                act,
+            )
+            
+        if config.do_reg:
+            self.head = nn.Linear(config.d_model, 1)
+        else:
+            self.head = nn.Linear(config.d_model, 950)            
+        self.freeze_cls()
+
+    def forward(self, x):
+        x = self.cls_model(x)
+        x = self.regression(x)    
+        x = self.head(x)        
+        return x
+    
+    def freeze_cls(self):
+        for param in self.cls_model.parameters():
+            param.requires_grad = False
 
 class Model_Res(nn.Module):
     """
@@ -156,7 +213,7 @@ class Model_Res(nn.Module):
     """
     def __init__(self, input_size, config):
         super().__init__()
-        act = nn.SELU(inplace=False)
+        act = getAct(config)
         
         hidden = config.hidden
         hidden_gru = config.hidden_gru

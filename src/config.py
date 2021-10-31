@@ -4,14 +4,15 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 ## TODO:
-## 1. why mix-precision decrease performance? * 
-## 2. use GRU, LSTM, transformer together *
-## 3. add SWA *
-## 4. remove huge error cases (?)
-## 5. KNN features
-## 6. change the loss function to give 0.1 weight to samples * 
-## 7. deal with NaN issue * 
-## 8. make transformer work
+## 1. remove huge error cases (?)
+## 2. KNN features
+## 3. make transformer work -> learning rate, convergence speed
+## 4. try the model from G2Net *
+## 5. check notebook - combine them
+## 6. SGD needs higher learning rate
+## 7. More folds (8 instead of 5) ...
+## 8. optimizer LAMB ?
+## 9. better ensemble
 
 class Base:
     # data
@@ -27,7 +28,7 @@ class Base:
     # general
     debug = False
     model_version = "base_version"
-    model_module = "BASE" # "RES"
+    model_module = "BASE" # "RES" , "CLS_TSF"
     PL_folder = None
     seed = 48
     ckpt_folder = None
@@ -52,6 +53,7 @@ class Base:
     rnn_model = "LSTM"  # GRU
     hidden = [256] * 5
     rnn_do = 0
+    use_bn = True
     # if we use residual block format, number of gru should be 1 smaller than lstm
     hidden_gru = [256] * 4
     
@@ -67,11 +69,13 @@ class Base:
     tsf_do = 0.2
     dim_forward = 2048
     num_layers = 2
+    
+    act = "SELU"
 
     # training
     do_reg = True
     epochs = 300
-    es = 20
+    es = 25
     train_folds = [0]
     batch_size = 512
     optimizer = "AdamW"
@@ -84,7 +88,7 @@ class Base:
 
     use_in_phase_only = False
     out_phase_weight = 0.1
-    loss_fnc = "huber" #huber
+    loss_fnc = "huber" #huber, mae, ce, ce_custom
     delta = 0.25
 
     # swa
@@ -128,6 +132,11 @@ class LSTM5_CLS_DO02(newStart):
 class LSTM5_CLS_DO02_OP01(LSTM5_CLS_DO02):
     loss_fnc = "ce_custom"
 
+class LSTM5_CLS_DO02_IPOnly(LSTM5_CLS_DO02_OP01):
+    loss_fnc = "ce_custom"
+    use_in_phase_only = True
+
+
 class LSTM5_CLS_DO02_OP01_physics(LSTM5_CLS_DO02_OP01):
     use_physics_fe = True
 
@@ -137,19 +146,51 @@ class LSTM5_CLS_DO02_OP01_physics_PL(LSTM5_CLS_DO02_OP01_physics):
 class LSTM5_CLS_DO02_OP01_physics_SWA(LSTM5_CLS_DO02_OP01_physics):
     use_swa = True
 
+    
+class LSTM5_CLS_DO02_CH01_OP01_physics(LSTM5_CLS_DO02_OP01_physics):
+    rnn_do = 0.2
+    use_ch = True
+    ch_do = 0.1
 
-class LSTM5_CLS_DO02_IPOnly(LSTM5_CLS_DO02_OP01):
-    loss_fnc = "ce_custom"
+class LSTM5_CLS_DO025_OP01_physics(LSTM5_CLS_DO02_OP01_physics):
+    rnn_do = 0.25
+
+class LSTM5_CLS_DO02_CH01_OP01_physics_SiLU(LSTM5_CLS_DO02_CH01_OP01_physics):
+    act = "SiLU"
+    
+class LSTM5_CLS_DO02_IPOnly_physics(LSTM5_CLS_DO02_OP01):
+    use_physics_fe = True
+    use_in_phase_only = True    
+    
+# different optimizer
+class LSTM5_CLS_DO02_CH01_OP01_physics_ADAM(LSTM5_CLS_DO02_CH01_OP01_physics):
+    optimizer = "Adam"
+
+class LSTM5_CLS_DO02_CH01_OP01_physics_RangerLars(LSTM5_CLS_DO02_CH01_OP01_physics):
+    optimizer = "RangerLars"
+    
+class LSTM5_CLS_DO02_CH01_OP01_physics_SGD(LSTM5_CLS_DO02_CH01_OP01_physics):
+    optimizer = "SGD"
+    
+class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL(LSTM5_CLS_DO02_OP01_physics):
+    use_physics_fe = True
     use_in_phase_only = True
+    act = "SiLU"
+    use_ch = True
+    ch_do = 0.1
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1031/"
+    optimizer = "Adam"
 
-class LSTM5_CLS_DO02_OP01_PL(LSTM5_CLS_DO02_OP01):
-    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
-
+class noBatchNorm(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
+    use_bn = False
+    
+    
 
 class LSTM3_TSF2(newStart):
     use_transformer = True
     hidden = [256] * 3
     num_layer = 2
+    lr = 1e-4
 
 class LSTM3_TSF4_DO0(LSTM3_TSF2):
     tsf_do = 0
@@ -160,12 +201,34 @@ class LSTM3_TSF4_DO0_dim512(LSTM3_TSF2):
     num_layer = 4
     d_model = 512
 
+class LSTM_Fork_PL(newStart):
+    hidden = [1024, 512, 256, 128]
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
+    fc = 128
 
 
 
 class LSTM3_TSFxx():
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
 
+
+class CLS_TSF(LSTM5_CLS_DO02_OP01_physics_PL):
+    model_module = "CLS_TSF"
+    cls_model_output_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_CLS_DO02_OP01_physics_PL/"
+    do_reg = True
+    loss_fnc = "huber"
+    d_model = 512
+    n_head = 8
+    tsf_do = 0
+    dim_forward = 2048
+    num_layers = 1
+    use_pos_encoding = False
+    
+class CLS_TSF_PE(CLS_TSF):
+    use_pos_encoding = True
+
+class CLS_TSF_LR1e4(CLS_TSF):
+    lr = 1e-4
 
 
 def update_config(config):
@@ -178,6 +241,7 @@ def update_config(config):
         config.epochs = 3
         config.train_folds = [0]
         config.swa_val_score_th = 100
+        config.use_wandb = False
     if config.use_wandb:
         if config.wandb_group is None:
             config.wandb_group = config.model_module
