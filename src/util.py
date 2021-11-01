@@ -39,8 +39,8 @@ def do_swa_scheduler(step, swa_scheduler, swa_start_step):
 
 def get_scheduler(optimizer, train_size, config):
     if config.scheduler == 'ReduceLROnPlateau':
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=config.factor,
-                                      patience=config.patience, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=config.factor, 
+                                      min_lr=1e-5, patience=config.patience, verbose=True)
     elif config.scheduler == 'CosineAnnealingLR':
         scheduler = CosineAnnealingLR(optimizer,
                                       T_max=config.T_max,

@@ -5,8 +5,8 @@ from datetime import datetime
 
 ## TODO:
 ## 1. make transformer work -> learning rate, convergence speed xx
-## 2. optimizer LAMB ?
-## 3. maybe more related with the data ??
+## 2. maybe more related with the data ?
+## 3. larger ensemble 
 
 class Base:
     # data
@@ -212,7 +212,10 @@ class LSTM5_CLS_FIXED_NoErr2(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
     error_thread = 2
     PL_folder = None
 
-
+class LSTM5_CLS_FIXED_Lamb_LR2e3_BS1024(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    batch_size = 1024
+    lr = 2e-3
+    PL_folder = None
     
 
 # Transformer
