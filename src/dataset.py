@@ -154,14 +154,12 @@ def generate_PL(fold, train_df, config):
 
 
 def num_2_cls_func(y, pressure_unique_path):
-    print("Transform number into class")
     pressure_unique = np.load(pressure_unique_path)
     num_to_cls_func = np.vectorize(lambda x: np.abs(pressure_unique-x).argmin())
     return num_to_cls_func(y)
 
 
 def cls_2_num_func(y, pressure_unique_path):
-    print("Transform class into number")
     pressure_unique = np.load(pressure_unique_path)
     cls_to_num_dict = dict(zip(list(range(len(pressure_unique))), pressure_unique))
     cls_to_num_func = np.vectorize(lambda x: cls_to_num_dict[x])

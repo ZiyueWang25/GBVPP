@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from util import load_pickle
+from tqdm import tqdm
 
 
 def add_features_choice(df, config):
@@ -26,6 +28,7 @@ def add_features(df, config):
 
     # u_in
     print("--- Generate u_in features ---")
+    df.sort_values(["breath_id","id"], inplace=True)
     g = df.groupby('breath_id')['u_in']
     df['cross_u_in'] = df['u_in'] * (1 - df['u_out'])
     # u_in: first point, last point
@@ -65,6 +68,7 @@ def add_features(df, config):
     df['u_in_diffmean'] = df['u_in_mean'] - df['u_in']
 
     if config.use_crossSectional_features:
+        df.sort_values(["breath_id","id"], inplace=True)
         # Cross Sectional
         print("--- Generate cross sectional features ---")
         RC_u_in_median = pd.read_csv(config.RC_u_in_median_path).set_index(["R", "C", "step"])
@@ -81,6 +85,7 @@ def add_features(df, config):
 
     # fake pressure
     if config.use_fake_pressure:
+        df.sort_values(["breath_id","id"], inplace=True)
         print("--- Generate fake pressure features ---")
         g = df.groupby("breath_id")["pressure"]
         for i in range(1, 4):
@@ -94,7 +99,8 @@ def add_features(df, config):
     
     # physics feature
     if config.use_physics_fe:
-        print("-- generate physics features --")
+        print("--- Generate physics features ---")
+        df.sort_values(["breath_id","id"], inplace=True)
         df['area_2'] = df['time_step'] * df['u_in']
         df['area_2'] = df.groupby('breath_id')['area_2'].cumsum()
         df['time_step_cumsum'] = df.groupby(['breath_id'])['time_step'].cumsum()
@@ -105,6 +111,16 @@ def add_features(df, config):
         df.loc[df['time_step'] != 0, 'vt']=df['area']/(df['C']*(1 - df['factor']))
         df['v']=df['vf']+df['vt']        
         df.drop(columns=["exponent", "factor"], inplace=True)
+        
+    if config.use_cluster:
+        print("--- Generate Cluster features ---")
+        df.sort_values(["breath_id","id"], inplace=True)
+        for n_cluster in tqdm([10, 15, 25, 40]):
+            u_in_median = load_pickle(config.input_folder + "/" + f"cluster_u_in_median_{n_cluster}.pkl")
+            u_in_mean = load_pickle(config.input_folder + "/" + f"cluster_u_in_median_{n_cluster}.pkl")
+            id_cluster = load_pickle(config.input_folder + "/" + f"cluster_id_{n_cluster}.pkl")
+            df[f"cluster_{n_cluster}_median_diff"] = df.groupby("breath_id", group_keys=False).apply(lambda df: df.u_in - u_in_median[id_cluster[df.breath_id.iloc[0]]])
+            df[f"cluster_{n_cluster}_mean_diff"] = df.groupby("breath_id", group_keys=False).apply(lambda df: df.u_in - u_in_mean[id_cluster[df.breath_id.iloc[0]]])
 
     # R C
     print("--- Generate R C features ---")
@@ -129,7 +145,7 @@ def add_features(df, config):
         df.drop(columns=drop_cols, inplace=True)
 
     df = df.fillna(0)
-    df.sort_values("id", inplace=True)
+    df.sort_values(["breath_id","id"], inplace=True)
     return df
 
 

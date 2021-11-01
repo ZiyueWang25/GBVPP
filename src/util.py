@@ -143,7 +143,7 @@ def getAct(config):
     elif config.act == "ReLU":
         return nn.ReLU(inplace=False)
 
-def reduce_mem_usage(props):
+def reduce_mem_usage(props, verbose=False):
     start_mem_usg = props.memory_usage().sum() / 1024**2 
     print("Memory usage of properties dataframe is :",start_mem_usg," MB")
     NAlist = [] # Keeps track of columns that have missing values filled in. 
@@ -151,9 +151,10 @@ def reduce_mem_usage(props):
         if props[col].dtype != object:  # Exclude strings
             
             # Print current column type
-            print("******************************")
-            print("Column: ",col)
-            print("dtype before: ",props[col].dtype)
+            if verbose:
+                print("******************************")
+                print("Column: ",col)
+                print("dtype before: ",props[col].dtype)
             
             # make variables for Int, max and min
             IsInt = False
@@ -199,12 +200,13 @@ def reduce_mem_usage(props):
                 props[col] = props[col].astype(np.float32)
             
             # Print new column type
-            print("dtype after: ",props[col].dtype)
-            print("******************************")
+            if verbose:
+                print("dtype after: ",props[col].dtype)
+                print("******************************")
     
     # Print final result
     print("___MEMORY USAGE AFTER COMPLETION:___")
     mem_usg = props.memory_usage().sum() / 1024**2 
-    print("Memory usage is: ",mem_usg," MB")
-    print("This is ",100*mem_usg/start_mem_usg,"% of the initial size")
+    print(f"Memory usage is: {mem_usg:.1f} MB")
+    print(f"This is {mem_usg / start_mem_usg:.1%} of the initial size")
     return props, NAlist

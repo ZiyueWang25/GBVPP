@@ -127,5 +127,12 @@
 # CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_DO02_CH01_OP01_physics_MAE --train_folds 0 --debug 0 --gpu 1
 # CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_DO02_CH01_OP01_physics_SGD --train_folds 0 --debug 0 --gpu 1
 # CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_CH01_OP01_physics_SiLU --train_folds 3 4 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL --train_folds 2 3 4 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL --train_folds 4 --debug 0 --gpu 1
+# CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 1
+
+
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_Better_useCluster --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_Reg_Better_useCluster_noCH --train_folds 0 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_Reg_NEW --train_folds 0 --debug 0 --gpu 1
+
+

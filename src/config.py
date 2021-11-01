@@ -5,14 +5,10 @@ from datetime import datetime
 
 ## TODO:
 ## 1. remove huge error cases (?)
-## 2. KNN features
-## 3. make transformer work -> learning rate, convergence speed
-## 4. try the model from G2Net *
-## 5. check notebook - combine them
-## 6. SGD needs higher learning rate
-## 7. More folds (8 instead of 5) ...
-## 8. optimizer LAMB ?
-## 9. better ensemble
+## 2. make transformer work -> learning rate, convergence speed xx
+## 3. More folds (8 instead of 5) ...
+## 4. optimizer LAMB ?
+## 5. better ensemble 
 
 class Base:
     # data
@@ -48,6 +44,8 @@ class Base:
     use_RC_together = True
     use_physics_fe = False
     drop_useless_cols = True
+    
+    use_cluster = False # "cluster_s" , "cluster_m", "cluster_l"
 
     # Model - rnn
     rnn_model = "LSTM"  # GRU
@@ -172,20 +170,45 @@ class LSTM5_CLS_DO02_CH01_OP01_physics_RangerLars(LSTM5_CLS_DO02_CH01_OP01_physi
 class LSTM5_CLS_DO02_CH01_OP01_physics_SGD(LSTM5_CLS_DO02_CH01_OP01_physics):
     optimizer = "SGD"
     
-class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL(LSTM5_CLS_DO02_OP01_physics):
+class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL(newStart):
+    do_reg=False
+    loss_fnc = "ce_custom"
     use_physics_fe = True
     use_in_phase_only = True
     act = "SiLU"
     use_ch = True
     ch_do = 0.1
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1031/"
-    optimizer = "Adam"
+    optimizer = "Adam"    
 
 class noBatchNorm(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
     use_bn = False
     
     
+class LSTM5_CLS_Better_useCluster(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
+    PL_folder = None
+    use_cluster = True
 
+class LSTM5_CLS_Better_useCluster_CHDO02(LSTM5_CLS_Better_useCluster):
+    ch_do = 0.2
+
+    
+class LSTM5_Reg_Better_useCluster(LSTM5_CLS_Better_useCluster):
+    do_reg = True
+    loss_fnc = "huber"
+    ch_do = 0
+    
+
+class LSTM5_Reg_Better_useCluster_noCH(LSTM5_Reg_Better_useCluster):
+    use_ch = False
+    fc = 64
+    
+class LSTM5_Reg_NEW(newStart):
+    fc = 64
+    use_physics_fe = True
+    use_cluster = True
+
+# Transformer
 class LSTM3_TSF2(newStart):
     use_transformer = True
     hidden = [256] * 3
