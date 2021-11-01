@@ -4,11 +4,9 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 ## TODO:
-## 1. remove huge error cases (?)
-## 2. make transformer work -> learning rate, convergence speed xx
-## 3. More folds (8 instead of 5) ...
-## 4. optimizer LAMB ?
-## 5. better ensemble 
+## 1. make transformer work -> learning rate, convergence speed xx
+## 2. optimizer LAMB ?
+## 3. maybe more related with the data ??
 
 class Base:
     # data
@@ -20,6 +18,8 @@ class Base:
     fake_pressure_path = "/home/vincent/Kaggle/GBVPP/input/fake_pressure_1368.csv"
     RC_u_in_median_path = "/home/vincent/Kaggle/GBVPP/input/RC_u_in_median.csv"
     RC_u_in_mean_path = "/home/vincent/Kaggle/GBVPP/input/RC_u_in_mean.csv"
+    large_error_id_1_path = "/home/vincent/Kaggle/GBVPP/input/large_error_id_1.npy"
+    large_error_id_2_path = "/home/vincent/Kaggle/GBVPP/input/large_error_id_2.npy"
 
     # general
     debug = False
@@ -29,7 +29,9 @@ class Base:
     seed = 48
     ckpt_folder = None
     use_lr_finder = False
-
+    
+    drop_large_error_id = False
+    error_thread = 1
 
     # preprocessing
     low_q = 25
@@ -116,6 +118,17 @@ class LSTM5_REG(newStart):
 class LSTM5_REG_PL(LSTM5_REG):
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
 
+class LSTM5_REG_PL2(LSTM5_REG_PL):
+    pass
+
+class LSTM5_REG_PL_better(LSTM5_REG_PL):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1031/"
+
+class LSTM5_REG_physics_PL_better_2(LSTM5_REG_PL):
+    use_physics_fe = True
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101/"
+
+
 class LSTM7_REG_PL(LSTM5_REG):
     hidden = [256] * 7
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
@@ -163,12 +176,6 @@ class LSTM5_CLS_DO02_IPOnly_physics(LSTM5_CLS_DO02_OP01):
 # different optimizer
 class LSTM5_CLS_DO02_CH01_OP01_physics_ADAM(LSTM5_CLS_DO02_CH01_OP01_physics):
     optimizer = "Adam"
-
-class LSTM5_CLS_DO02_CH01_OP01_physics_RangerLars(LSTM5_CLS_DO02_CH01_OP01_physics):
-    optimizer = "RangerLars"
-    
-class LSTM5_CLS_DO02_CH01_OP01_physics_SGD(LSTM5_CLS_DO02_CH01_OP01_physics):
-    optimizer = "SGD"
     
 class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL(newStart):
     do_reg=False
@@ -181,32 +188,32 @@ class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL(newStart):
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1031/"
     optimizer = "Adam"    
 
-class noBatchNorm(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
-    use_bn = False
-    
-    
-class LSTM5_CLS_Better_useCluster(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
-    PL_folder = None
-    use_cluster = True
+class LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL2(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1031/"
 
-class LSTM5_CLS_Better_useCluster_CHDO02(LSTM5_CLS_Better_useCluster):
+class LSTM5_CLS_DO03_CH02_IPOnly_SiLU_ADAM_PL3(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
+    rnn_do = 0.3
     ch_do = 0.2
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101/"
+        
+class LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_ADAM_PL):
+    rnn_do = 0.2
+    ch_do = 0.4
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101/"
+
+
+class LSTM5_CLS_FIXED_NoErr1(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    drop_large_error_id = True
+    error_thread = 1
+    PL_folder = None
+
+class LSTM5_CLS_FIXED_NoErr2(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    drop_large_error_id = True
+    error_thread = 2
+    PL_folder = None
+
 
     
-class LSTM5_Reg_Better_useCluster(LSTM5_CLS_Better_useCluster):
-    do_reg = True
-    loss_fnc = "huber"
-    ch_do = 0
-    
-
-class LSTM5_Reg_Better_useCluster_noCH(LSTM5_Reg_Better_useCluster):
-    use_ch = False
-    fc = 64
-    
-class LSTM5_Reg_NEW(newStart):
-    fc = 64
-    use_physics_fe = True
-    use_cluster = True
 
 # Transformer
 class LSTM3_TSF2(newStart):

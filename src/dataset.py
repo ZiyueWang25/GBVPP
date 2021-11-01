@@ -62,6 +62,15 @@ def read_data(config):
     if config.use_fake_pressure:
         print("Use fake pressure")
         test["pressure"] = pd.read_csv(config.fake_pressure_path)["pressure"]
+        
+    if config.drop_large_error_id:
+        if config.error_thread == 1:
+            large_error_id = np.load(config.large_error_id_1_path)
+        elif config.error_thread == 2:
+            large_error_id = np.load(config.large_error_id_2_path)            
+        print("Drop Large Error ID, size: ", len(large_error_id))
+        train = train.query(f"breath_id not in {list(large_error_id)}")
+        
 
     with open(config.input_folder + '/id_fold_dict.pickle', 'rb') as handle:
         id_fold_dict = pickle.load(handle)
