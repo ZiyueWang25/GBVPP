@@ -139,10 +139,9 @@ class Trainer:
 
             train_losses.append(train_loss)
             valid_losses.append(valid_loss)
-
-            if isinstance(self.scheduler, ReduceLROnPlateau):
-                self.scheduler.step(valid_loss)
             valid_score = cal_mae_metric(self.y_valid, valid_preds, self.w_valid)
+            if isinstance(self.scheduler, ReduceLROnPlateau):
+                self.scheduler.step(valid_score)
 
             if self.best_valid_score > valid_score:
                 self.best_valid_score = valid_score

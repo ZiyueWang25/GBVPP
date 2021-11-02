@@ -47,7 +47,7 @@ def get_test_avg(test_df, config, cv):
         X_test, y_test, w_test = prepare_test(test_df.copy(), config, fold)
         data_retriever = VPP(X_test, y_test, w_test, config)
         data_loader = DataLoader(data_retriever,
-                                 batch_size=config.batch_size//2,
+                                 batch_size=config.batch_size,
                                  shuffle=False,
                                  num_workers=config.num_workers, pin_memory=True, drop_last=False)
         config.fold = fold

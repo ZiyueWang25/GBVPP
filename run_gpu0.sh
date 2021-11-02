@@ -127,9 +127,19 @@
 # CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG_physics_PL_better_2 --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_REG_physics_PL_better_2 --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 # CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3 --train_folds 0 --debug 0 --gpu 1
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3 --train_folds 1 2 --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_FIXED_NoErr1 --train_folds 0  --debug 0 --gpu 0
-CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_FIXED_Lamb_LR2e3_BS1024 --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3 --train_folds 1 2 --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_FIXED_NoErr1 --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_FIXED_Lamb_LR2e3_BS1024 --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_LARGER512x3842x2562 --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_LARGER512x3842x2562_DO03_CH04 --train_folds 0  --debug 0 --gpu 0
+# CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG_NoCrossSectional --train_folds 0  --debug 0 --gpu 0
 
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG_physics_noCS_PL --train_folds 0 --debug 0 --gpu 0
 
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_FIXED_NoErr1_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_CLS_FIXED_NoErr1_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0
 
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_CLS_LARGER512x3842x2562_noCS_PL --train_folds 3 4  --debug 0 --gpu 0
+
+CUDA_AVAILABLE_DEVICES=0 python3 train.py --model_config LSTM5_REG_physics_noCS_PL --train_folds 1 2 3 4 --debug 0 --gpu 0
+CUDA_AVAILABLE_DEVICES=0 python3 infer.py --model_config LSTM5_REG_physics_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 0

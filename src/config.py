@@ -5,8 +5,8 @@ from datetime import datetime
 
 ## TODO:
 ## 1. make transformer work -> learning rate, convergence speed xx
-## 2. maybe more related with the data ?
-## 3. larger ensemble 
+## 2. small error id and large error different operation
+## 3. different dropout rate for different layers
 
 class Base:
     # data
@@ -115,6 +115,9 @@ class newStart(Base):
 class LSTM5_REG(newStart):
     pass
 
+class LSTM5_REG_NoCrossSectional(newStart):
+    use_crossSectional_features = False
+
 class LSTM5_REG_PL(LSTM5_REG):
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
 
@@ -128,11 +131,22 @@ class LSTM5_REG_physics_PL_better_2(LSTM5_REG_PL):
     use_physics_fe = True
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101/"
 
+class LSTM5_REG_physics_noCS_PL(LSTM5_REG_PL):
+    use_physics_fe = True
+    use_crossSectional_features = False
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
+    
+class LSTM5_REG_LARGER_physics_noCS_PL(LSTM5_REG_physics_noCS_PL):
+    hidden = [512, 384, 384, 256, 256]
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
+
 
 class LSTM7_REG_PL(LSTM5_REG):
     hidden = [256] * 7
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/LSTM5_OP01_huber025_PL3/"
 
+
+# classification problem
 
 class LSTM5_CLS_DO02(newStart):
     do_reg = False
@@ -202,10 +216,47 @@ class LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3(LSTM5_CLS_DO02_CH01_IPOnly_SiLU_A
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101/"
 
 
+class LSTM5_CLS_LARGER512x384x256(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    hidden = [512, 384, 256, 256, 256]
+    PL_folder = None
+
+class LSTM5_CLS_LARGER512x3842x2562(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    hidden = [512, 384, 384, 256, 256]
+    PL_folder = None
+
+class LSTM5_CLS_LARGER512x3842x2562_noCS_PL(LSTM5_CLS_LARGER512x3842x2562):
+    use_crossSectional_features = False    
+    hidden = [512, 384, 384, 256, 256]
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
+
+
+class LSTM5_CLS_LARGER512x3842x2562_DO03_CH05(LSTM5_CLS_LARGER512x3842x2562):
+    rnn_do = 0.3
+    ch_do = 0.5
+    
+class LSTM5_CLS_LARGER512x3842x2562_DO03_CH04(LSTM5_CLS_LARGER512x3842x2562):
+    rnn_do = 0.3
+    ch_do = 0.4
+
+
+class LSTM5_CLS_FIXED_NoCrossSectional(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    use_crossSectional_features = False
+    PL_folder = None
+    
+class LSTM5_CLS_FIXED_noCS_PL(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
+    use_crossSectional_features = False
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
+
 class LSTM5_CLS_FIXED_NoErr1(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
     drop_large_error_id = True
     error_thread = 1
     PL_folder = None
+
+
+class LSTM5_CLS_FIXED_NoErr1_noCS_PL(LSTM5_CLS_FIXED_NoErr1):
+    use_crossSectional_features = False
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
+    
 
 class LSTM5_CLS_FIXED_NoErr2(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
     drop_large_error_id = True

@@ -170,10 +170,9 @@ def num_2_cls_func(y, pressure_unique_path):
 
 def cls_2_num_func(y, pressure_unique_path):
     pressure_unique = np.load(pressure_unique_path)
-    cls_to_num_dict = dict(zip(list(range(len(pressure_unique))), pressure_unique))
-    cls_to_num_func = np.vectorize(lambda x: cls_to_num_dict[x])
-    return cls_to_num_func(y)
-
+    P_MIN = np.min(pressure_unique)
+    STEP = pressure_unique[1] - pressure_unique[0]
+    return y * STEP + P_MIN
 
 def transform_weight(w, config):
     if not config.use_in_phase_only and config.out_phase_weight is not None:
