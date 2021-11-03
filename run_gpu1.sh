@@ -153,5 +153,9 @@ CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_FIXED_noCS_PL
 CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_LARGER512x3842x2562_noCS_PL --train_folds 0 1 2  --debug 0 --gpu 1
 CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_LARGER512x3842x2562_noCS_PL --train_folds 0 1 2 3 4  --debug 0 --gpu 1
 
-CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_REG_LARGER_physics_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_REG_LARGER_physics_noCS_PL --train_folds 2 3 4 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_REG_LARGER_physics_noCS_PL --train_folds 0 1 --debug 0 --gpu 1
 CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_REG_LARGER_physics_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 1
+# TODO
+CUDA_AVAILABLE_DEVICES=1 python3 train.py --model_config LSTM5_CLS_LARGER512x3842x2562_NoErr1_noCS_PL --train_folds 1 2 3 4 --debug 0 --gpu 1
+CUDA_AVAILABLE_DEVICES=1 python3 infer.py --model_config LSTM5_CLS_LARGER512x3842x2562_NoErr1_noCS_PL --train_folds 0 1 2 3 4 --debug 0 --gpu 1

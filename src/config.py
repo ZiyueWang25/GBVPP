@@ -5,8 +5,7 @@ from datetime import datetime
 
 ## TODO:
 ## 1. make transformer work -> learning rate, convergence speed xx
-## 2. small error id and large error different operation
-## 3. different dropout rate for different layers
+## 2. ensemble overfit (light GBM? NN?)
 
 class Base:
     # data
@@ -74,7 +73,7 @@ class Base:
 
     # training
     do_reg = True
-    epochs = 300
+    epochs = 250
     es = 25
     train_folds = [0]
     batch_size = 512
@@ -135,11 +134,14 @@ class LSTM5_REG_physics_noCS_PL(LSTM5_REG_PL):
     use_physics_fe = True
     use_crossSectional_features = False
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
-    
+        
 class LSTM5_REG_LARGER_physics_noCS_PL(LSTM5_REG_physics_noCS_PL):
     hidden = [512, 384, 384, 256, 256]
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
 
+class LSTM5_REG_LARGER_physics_noCS_noErr1_PL(LSTM5_REG_LARGER_physics_noCS_PL):
+    drop_large_error_id = True
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
 
 class LSTM7_REG_PL(LSTM5_REG):
     hidden = [256] * 7
@@ -257,6 +259,10 @@ class LSTM5_CLS_FIXED_NoErr1_noCS_PL(LSTM5_CLS_FIXED_NoErr1):
     use_crossSectional_features = False
     PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
     
+class LSTM5_CLS_LARGER512x3842x2562_NoErr1_noCS_PL(LSTM5_CLS_FIXED_NoErr1_noCS_PL):
+    use_crossSectional_features = False
+    hidden = [512, 384, 384, 256, 256]
+    PL_folder = "/home/vincent/Kaggle/GBVPP/output/ensemble_1101_all/"
 
 class LSTM5_CLS_FIXED_NoErr2(LSTM5_CLS_DO02_CH04_IPOnly_SiLU_ADAM_PL3):
     drop_large_error_id = True

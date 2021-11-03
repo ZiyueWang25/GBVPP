@@ -117,16 +117,16 @@ def save_pickle(obj, folder_path):
 def load_pickle(folder_path):
     return pickle.load(open(folder_path, 'rb'))
 
-def smart_avg(inputs, axis=1):
+def smart_avg(inputs, axis=1, spread_lim = 0.65, verbose=False):
     """Compute the mean of the predictions if there are no outliers,
     or the median if there are outliers.
 
     Parameter: inputs = ndarray of shape (n_samples, n_folds)"""
     spread = inputs.max(axis=axis) - inputs.min(axis=axis) 
-    spread_lim = 0.45
-    print(f"Inliers:  {(spread < spread_lim).sum():7} -> compute mean")
-    print(f"Outliers: {(spread >= spread_lim).sum():7} -> compute median")
-    print(f"Total:    {len(inputs):7}")
+    if verbose:
+        print(f"Inliers:  {(spread < spread_lim).sum():7} -> compute mean")
+        print(f"Outliers: {(spread >= spread_lim).sum():7} -> compute median")
+        print(f"Total:    {len(inputs):7}")
     return np.where(spread < spread_lim,
                     np.mean(inputs, axis=axis),
                     np.median(inputs, axis=axis))
