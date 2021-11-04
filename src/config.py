@@ -5,7 +5,6 @@ from datetime import datetime
 
 ## TODO:
 ## 1. make transformer work -> learning rate, convergence speed xx
-## 2. ensemble overfit (light GBM? NN?)
 
 class Base:
     # data
